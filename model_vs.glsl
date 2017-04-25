@@ -5,15 +5,19 @@ layout( location = 2 ) in vec3 normal;
 
 out vec3 fragmentColor;
 out vec2 tex_coord;
+out float gl_ClipDistance[2];
 
 uniform mat4 model_model, view_model, projection_model;
 uniform vec3 lightColor, lightPosition;
 uniform vec3 diffuseColor, ambientColor, specularColor;
 uniform float lightPower;
+uniform vec4 clipPlane0, clipPlane1;
 
 void main(){
     //projection_model plane
     gl_Position = projection_model * view_model * model_model * vec4( vertex_coord, 1.0 );
+    gl_ClipDistance[0] = -dot(model_model * vec4(vertex_coord, 1.0), clipPlane0);
+    gl_ClipDistance[1] = dot(model_model * vec4(vertex_coord, 1.0), clipPlane1);
 
     //view_model space
     vec3 vPosition_viewspace = ( view_model * model_model * vec4( vertex_coord, 1.0 ) ).xyz;

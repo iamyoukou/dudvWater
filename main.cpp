@@ -12,6 +12,7 @@ float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
 float farPlane = 2000.f;
+float dudv_move = 0.f;
 
 vec3 eyePoint = vec3( 12.f, 13.f, 1.f );
 vec3 eyeDirection = vec3(
@@ -21,14 +22,8 @@ vec3 eyeDirection = vec3(
 );
 vec3 up = vec3( 0.f, 1.f, 0.f );
 
-float verticalAngle2;// = verticalAngle - 3.14f;
-vec3 eyePoint2;// = vec3(eyePoint.x, -eyePoint.y, eyePoint.z);
-vec3 eyeDirection2;
-/* = vec3(
-    sin(verticalAngle2) * cos(horizontalAngle),
-    cos(verticalAngle2),
-    sin(verticalAngle2) * sin(horizontalAngle)
-);*/
+float verticalAngle2;
+vec3 eyePoint2, eyeDirection2;
 
 vec3 lightPosition = vec3( 3.f, 3.f, 3.f );
 vec3 lightColor = vec3( 1.f, 1.f, 1.f );
@@ -84,15 +79,23 @@ GLfloat skyboxVertices[] = {
     SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE
 };
 
-const float WATER_SIZE = 5.f;
+const float WATER_SIZE = 3.8f;
 const float WATER_Y = 2.2f;
 GLfloat waterVertices[] = {
+    //coords
     -WATER_SIZE, WATER_Y, -WATER_SIZE,
     -WATER_SIZE, WATER_Y, WATER_SIZE,
     WATER_SIZE, WATER_Y, WATER_SIZE,
     WATER_SIZE, WATER_Y, WATER_SIZE,
     WATER_SIZE, WATER_Y, -WATER_SIZE,
-    -WATER_SIZE, WATER_Y, -WATER_SIZE
+    -WATER_SIZE, WATER_Y, -WATER_SIZE,
+    //texture coords for dudv
+    1.0f, 0.0f,
+    1.0f, 1.0f,
+    0.0f, 1.0f,
+    0.0f, 1.0f,
+    0.0f, 0.0f,
+    1.0f, 0.0f
 };
 
 GLfloat vertices_subscreen1[] = {
@@ -136,6 +139,7 @@ GLuint vbo_skybox, obj_skybox_tex, obj_pool_tex,
     obj_subscreen2_tex, vbo_subscreen2;
 GLuint vbo_model, vbo_model_normal;
 GLuint vbo_water;
+GLuint obj_reflection_tex, obj_refraction_tex, obj_dudv_tex;
 GLuint vao_skybox, vao_model, vao_water, vao_subscreen1, vao_subscreen2;
 GLuint fbo_subscreen1, fbo_subscreen2;
 GLuint subscreen1_depth, subscreen2_depth;
@@ -145,11 +149,8 @@ GLint uniform_model_water, uniform_view_water, uniform_projection_water;
 GLint uniform_lightColor, uniform_lightPosition, uniform_lightPower, uniform_lightDirection;
 GLint uniform_diffuseColor, uniform_ambientColor, uniform_specularColor;
 GLint uniform_tex, uniform_tex_subscreen1, uniform_tex_subscreen2;
-/*
-mat4 ori_model_skybox, model_skybox, view_skybox, projection_skybox;
-mat4 model_water, view_water, projection_water;
-mat4 model_model, view_model, projection_model;
-*/
+GLint uniform_tex_refraction, uniform_tex_reflection, uniform_tex_dudv;
+GLint uniform_move;
 mat4 ori_model_main, model_main, view_main, projection_main;
 mat4 ori_model_sub2, model_sub2, view_sub2, projection_sub2;
 mat4 model_skybox;
@@ -223,7 +224,8 @@ int main(int argc, char** argv){
     //FreeImage library
     FreeImage_Initialise(true);
 
-    model_main = translate( mat4( 1.f ), vec3( 0.f, 0.f, -4.f ) );
+    //model_main = translate( mat4( 1.f ), vec3( 0.f, 0.f, -4.f ) );
+    model_main = translate( mat4( 1.f ), vec3( 0.f, 0.f, 0.f ) );
     ori_model_main = model_main;
     view_main = lookAt( eyePoint, eyePoint + eyeDirection, up );
     projection_main = perspective(
@@ -252,22 +254,51 @@ int main(int argc, char** argv){
 
         computeMatricesFromInputs();
 
+        glUseProgram(program_water);
+        uniform_move = myGetUniformLocation(program_water, "dudv_move");
+        dudv_move += 0.0005f;//speed
+        dudv_move = fmod(dudv_move, 1.0f);
+        glUniform1f(uniform_move, dudv_move);
+        glUseProgram(0);
+
         //render to fbo_subscreen1
         glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen1);
         glClearColor( 171/256.f, 178/256.f, 191/256.f, 1.0f );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+        glEnable(GL_CLIP_DISTANCE0);
+        glDisable(GL_CLIP_DISTANCE1);
+
+        vec4 planeEquation0 = vec4(0, 1, 0, -2.2);
+        glUseProgram(program_model);
+        GLuint uniform_clipPlane0 = myGetUniformLocation(program_model, "clipPlane0");
+        glUniform4fv(uniform_clipPlane0, 1, value_ptr(planeEquation0));
+        glUseProgram(0);
+
         drawSkybox(model_skybox, view_main, projection_main);
         drawModels(model_main, view_main, projection_main);
 
         //render to fbo_subscreen2
+        glDisable(GL_CLIP_DISTANCE0);
+        glEnable(GL_CLIP_DISTANCE1);
+
         glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen2);
         glClearColor( 171/256.f, 178/256.f, 191/256.f, 1.0f );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+        glUseProgram(program_model);
+        vec4 planeEquation1 = vec4(0, 1, 0, -3);
+        GLuint uniform_clipPlane1 = myGetUniformLocation(program_model, "clipPlane1");
+        glUniform4fv(uniform_clipPlane1, 1, value_ptr(planeEquation1));
+        glUseProgram(0);
+
         drawSkybox(model_skybox, view_sub2, projection_sub2);
         drawModels(model_sub2, view_sub2, projection_sub2);
 
         //render to main screen
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDisable(GL_CLIP_DISTANCE0);
+        glDisable(GL_CLIP_DISTANCE1);
         drawSkybox(model_skybox, view_main, projection_main);
         drawModels(model_main, view_main, projection_main);
         drawWater(model_main, view_main, projection_main);
@@ -691,11 +722,17 @@ void init_water(){
     glGenBuffers(1, &vbo_water);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_water);
     glBufferData(
-        GL_ARRAY_BUFFER, sizeof(GLfloat)*6*3,
+        GL_ARRAY_BUFFER, sizeof(waterVertices),
         waterVertices, GL_STATIC_DRAW
     );
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(
+        1, 2, GL_FLOAT, GL_FALSE, 0,
+        (GLvoid*)(sizeof(GLfloat)*6*3)
+    );
+    glEnableVertexAttribArray(1);
 
     uniform_model_water = myGetUniformLocation(program_water, "model_water");
     uniform_view_water = myGetUniformLocation(program_water, "view_water");
@@ -704,6 +741,30 @@ void init_water(){
     glUniformMatrix4fv( uniform_model_water, 1, GL_FALSE, value_ptr( model_main ) );
     glUniformMatrix4fv( uniform_view_water, 1, GL_FALSE, value_ptr( view_main ) );
     glUniformMatrix4fv( uniform_projection_water, 1, GL_FALSE, value_ptr( projection_main ) );
+
+    //dudv texture
+    FIBITMAP* dudv_image = FreeImage_Load(FIF_PNG, "dudv.png");
+
+    glActiveTexture(GL_TEXTURE4);
+    glGenTextures(1, &obj_dudv_tex);
+    glBindTexture(GL_TEXTURE_2D, obj_dudv_tex);
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB,
+        FreeImage_GetWidth(dudv_image), FreeImage_GetHeight(dudv_image),
+        0, GL_BGR, GL_UNSIGNED_BYTE,
+        (void*)FreeImage_GetBits(dudv_image)
+    );
+    glTexParameteri(
+        GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR
+    );
+
+    uniform_tex_reflection = myGetUniformLocation(program_water, "tex_reflection");
+    uniform_tex_refraction = myGetUniformLocation(program_water, "tex_refraction");
+    uniform_tex_dudv = myGetUniformLocation(program_water, "tex_dudv");
+    glUniform1i(uniform_tex_dudv, 4);//GL_TEXTURE4
+    glUniform1i(uniform_tex_reflection, 3);
+    glUniform1i(uniform_tex_refraction, 2);
 
     glBindVertexArray(0);
     glUseProgram(0);
@@ -776,7 +837,7 @@ void init_subscreen1(){
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, obj_subscreen1_tex, 0);
     glDrawBuffer(GL_COLOR_ATTACHMENT1);
 
-    GLuint uniform_tex_subscreen1 = myGetUniformLocation(program_subscreen1, "tex_subscreen1");
+    uniform_tex_subscreen1 = myGetUniformLocation(program_subscreen1, "tex_subscreen1");
     glUniform1i(uniform_tex_subscreen1, 2);
 
     glBindVertexArray(0);
@@ -850,7 +911,7 @@ void init_subscreen2(){
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, obj_subscreen2_tex, 0);
     glDrawBuffer(GL_COLOR_ATTACHMENT2);
 
-    GLuint uniform_tex_subscreen2 = myGetUniformLocation(program_subscreen2, "tex_subscreen2");
+    uniform_tex_subscreen2 = myGetUniformLocation(program_subscreen2, "tex_subscreen2");
     glUniform1i(uniform_tex_subscreen2, 3);
 
     glBindVertexArray(0);
