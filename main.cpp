@@ -139,7 +139,7 @@ GLuint vbo_skybox, obj_skybox_tex, obj_pool_tex,
     obj_subscreen2_tex, vbo_subscreen2;
 GLuint vbo_model, vbo_model_normal;
 GLuint vbo_water;
-GLuint obj_reflection_tex, obj_refraction_tex, obj_dudv_tex;
+GLuint obj_reflection_tex, obj_refraction_tex, obj_dudv_tex, obj_normal_tex;
 GLuint vao_skybox, vao_model, vao_water, vao_subscreen1, vao_subscreen2;
 GLuint fbo_subscreen1, fbo_subscreen2;
 GLuint subscreen1_depth, subscreen2_depth;
@@ -149,8 +149,10 @@ GLint uniform_model_water, uniform_view_water, uniform_projection_water;
 GLint uniform_lightColor, uniform_lightPosition, uniform_lightPower, uniform_lightDirection;
 GLint uniform_diffuseColor, uniform_ambientColor, uniform_specularColor;
 GLint uniform_tex, uniform_tex_subscreen1, uniform_tex_subscreen2;
-GLint uniform_tex_refraction, uniform_tex_reflection, uniform_tex_dudv;
+GLint uniform_tex_refraction, uniform_tex_reflection, uniform_tex_dudv, uniform_tex_normal;
 GLint uniform_move;
+GLint uniform_camera_coord;
+GLint uniform_lightColor_water, uniform_lightPosition_water;
 mat4 ori_model_main, model_main, view_main, projection_main;
 mat4 ori_model_sub2, model_sub2, view_sub2, projection_sub2;
 mat4 model_skybox;
@@ -259,6 +261,9 @@ int main(int argc, char** argv){
         dudv_move += 0.0005f;//speed
         dudv_move = fmod(dudv_move, 1.0f);
         glUniform1f(uniform_move, dudv_move);
+
+        uniform_camera_coord = myGetUniformLocation(program_water, "camera_coord");
+        glUniform3fv(uniform_camera_coord, 1, value_ptr(eyePoint));
         glUseProgram(0);
 
         //render to fbo_subscreen1
@@ -743,7 +748,7 @@ void init_water(){
     glUniformMatrix4fv( uniform_projection_water, 1, GL_FALSE, value_ptr( projection_main ) );
 
     //dudv texture
-    FIBITMAP* dudv_image = FreeImage_Load(FIF_PNG, "dudv.png");
+    FIBITMAP* dudv_image = FreeImage_Load(FIF_PNG, "dudv2.png");
 
     glActiveTexture(GL_TEXTURE4);
     glGenTextures(1, &obj_dudv_tex);
@@ -759,12 +764,37 @@ void init_water(){
         GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR
     );
 
+    //normal map texture
+    FIBITMAP* normal_image = FreeImage_Load(FIF_PNG, "normalMap2.png");
+
+    glActiveTexture(GL_TEXTURE5);
+    glGenTextures(1, &obj_normal_tex);
+    glBindTexture(GL_TEXTURE_2D, obj_normal_tex);
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB,
+        FreeImage_GetWidth(normal_image), FreeImage_GetHeight(normal_image),
+        0, GL_BGR, GL_UNSIGNED_BYTE,
+        (void*)FreeImage_GetBits(normal_image)
+    );
+    glTexParameteri(
+        GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR
+    );
+
     uniform_tex_reflection = myGetUniformLocation(program_water, "tex_reflection");
     uniform_tex_refraction = myGetUniformLocation(program_water, "tex_refraction");
     uniform_tex_dudv = myGetUniformLocation(program_water, "tex_dudv");
+    uniform_tex_normal = myGetUniformLocation(program_water, "tex_normal");
     glUniform1i(uniform_tex_dudv, 4);//GL_TEXTURE4
+    glUniform1i(uniform_tex_normal, 5);//GL_TEXTURE5
     glUniform1i(uniform_tex_reflection, 3);
     glUniform1i(uniform_tex_refraction, 2);
+
+    //light
+    uniform_lightColor_water = myGetUniformLocation(program_water, "lightColor_water");
+    uniform_lightPosition_water = myGetUniformLocation(program_water, "lightPosition_water");
+    glUniform3fv(uniform_lightColor_water, 1, value_ptr(lightColor));
+    glUniform3fv(uniform_lightPosition_water, 1, value_ptr(lightPosition));
 
     glBindVertexArray(0);
     glUseProgram(0);
