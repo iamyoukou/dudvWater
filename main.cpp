@@ -6,15 +6,15 @@ GLFWwindow* window;
 
 int faceNumber;
 
-float verticalAngle = -2.5f;
-float horizontalAngle = 0.5f;
+float verticalAngle = -2.3f;
+float horizontalAngle = 5.4f;
 float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
 float farPlane = 2000.f;
 float dudv_move = 0.f;
 
-vec3 eyePoint = vec3( 12.f, 13.f, 1.f );
+vec3 eyePoint = vec3( 5.7f, 9.7f, -5.9f );
 vec3 eyeDirection = vec3(
     sin(verticalAngle) * cos(horizontalAngle),
     cos(verticalAngle),
@@ -567,7 +567,7 @@ void init_3d_model(){
         std::cout << "Link failed: " << "model shaders" << '\n';
     }
 
-    mesh_info_t mesh = load_obj( "sand_pool.obj" );
+    mesh_info_t mesh = load_obj( "pool.obj" );
 
     //write vertex coordinate to array
     FACE_INFO& faces = mesh.faceInfos[0];
