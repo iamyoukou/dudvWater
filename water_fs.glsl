@@ -9,6 +9,7 @@ uniform sampler2D tex_reflection;
 uniform sampler2D tex_refraction;
 uniform sampler2D tex_dudv;
 uniform sampler2D tex_normal;
+uniform sampler2D tex_depth;
 uniform float dudv_move;
 uniform vec3 lightColor_water;
 
@@ -48,13 +49,13 @@ void main(){
     vec4 color_reflection = texture(tex_reflection, tex_coord_reflection);
     vec4 color_refraction = texture(tex_refraction, tex_coord_refraction);
 
-    vec3 view_vector = normalize(toCamera);
-    float refractive_factor = dot(view_vector, vec3(0, 1.0, 0));
-    refractive_factor = pow(refractive_factor, 3.0);
-
     //vec4 normalMapColor = texture(tex_normal, distortedTexCoord);
     vec4 normalMapColor = texture(tex_normal, distortion);
-    vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b, normalMapColor.g*2.0-1.0);
+    vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b*2.0-1.0, normalMapColor.g*2.0-1.0);
+
+    vec3 view_vector = normalize(toCamera);
+    float refractive_factor = dot(view_vector, vec3(0, 1, 0));
+    refractive_factor = pow(refractive_factor, 3.0);
 
     vec3 reflectedLight = reflect(normalize(fromLightVector), normal);
     float specular = max(dot(reflectedLight, view_vector), 0.0);
@@ -63,4 +64,6 @@ void main(){
 
     outputColor = mix(color_reflection, color_refraction, refractive_factor);
     outputColor = mix(outputColor, vec4(0.0, 0.0, 0.1, 1.0) + vec4(specularHighlight, 0), 0.1);
+
+    //outputColor = vec4(texture(tex_depth, dudv_coord).r, 0, 0, 1.0);
 }

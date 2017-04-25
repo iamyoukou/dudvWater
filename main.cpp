@@ -140,6 +140,7 @@ GLuint vbo_skybox, obj_skybox_tex, obj_pool_tex,
 GLuint vbo_model, vbo_model_normal;
 GLuint vbo_water;
 GLuint obj_reflection_tex, obj_refraction_tex, obj_dudv_tex, obj_normal_tex;
+GLuint obj_depth_tex;
 GLuint vao_skybox, vao_model, vao_water, vao_subscreen1, vao_subscreen2;
 GLuint fbo_subscreen1, fbo_subscreen2;
 GLuint subscreen1_depth, subscreen2_depth;
@@ -150,6 +151,7 @@ GLint uniform_lightColor, uniform_lightPosition, uniform_lightPower, uniform_lig
 GLint uniform_diffuseColor, uniform_ambientColor, uniform_specularColor;
 GLint uniform_tex, uniform_tex_subscreen1, uniform_tex_subscreen2;
 GLint uniform_tex_refraction, uniform_tex_reflection, uniform_tex_dudv, uniform_tex_normal;
+GLint uniform_tex_depth;
 GLint uniform_move;
 GLint uniform_camera_coord;
 GLint uniform_lightColor_water, uniform_lightPosition_water;
@@ -785,6 +787,8 @@ void init_water(){
     uniform_tex_refraction = myGetUniformLocation(program_water, "tex_refraction");
     uniform_tex_dudv = myGetUniformLocation(program_water, "tex_dudv");
     uniform_tex_normal = myGetUniformLocation(program_water, "tex_normal");
+    //uniform_tex_depth = myGetUniformLocation(program_water, "tex_depth");
+    //glUniform1i(uniform_tex_depth, 6);//GL_TEXTURE6 in init_subscreen1()
     glUniform1i(uniform_tex_dudv, 4);//GL_TEXTURE4
     glUniform1i(uniform_tex_normal, 5);//GL_TEXTURE5
     glUniform1i(uniform_tex_reflection, 3);
@@ -854,6 +858,12 @@ void init_subscreen1(){
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, obj_subscreen1_tex, 0);
+    glDrawBuffer(GL_COLOR_ATTACHMENT1);
+
+    uniform_tex_subscreen1 = myGetUniformLocation(program_subscreen1, "tex_subscreen1");
+    glUniform1i(uniform_tex_subscreen1, 2);
+/*
     glGenRenderbuffers(1, &subscreen1_depth);
     glBindRenderbuffer(GL_RENDERBUFFER, subscreen1_depth);
     glRenderbufferStorage(
@@ -863,14 +873,27 @@ void init_subscreen1(){
     glFramebufferRenderbuffer(
         GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, subscreen1_depth
     );
+*/
+    //depth texture
+    /*
+    glActiveTexture(GL_TEXTURE6);
+    glGenTextures(1, &obj_depth_tex);
+	glBindTexture(GL_TEXTURE_2D, obj_depth_tex);
+	glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24,
+        WINDOW_WIDTH*2, WINDOW_HEIGHT*2,
+        0, GL_DEPTH_COMPONENT, GL_FLOAT, 0
+    );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, obj_subscreen1_tex, 0);
-    glDrawBuffer(GL_COLOR_ATTACHMENT1);
-
-    uniform_tex_subscreen1 = myGetUniformLocation(program_subscreen1, "tex_subscreen1");
-    glUniform1i(uniform_tex_subscreen1, 2);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_COMPONENT, obj_depth_tex, 0);
+    */
 
     glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(0);
 }
 
@@ -945,6 +968,7 @@ void init_subscreen2(){
     glUniform1i(uniform_tex_subscreen2, 3);
 
     glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(0);
 }
 
