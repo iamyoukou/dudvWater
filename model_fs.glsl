@@ -8,6 +8,6 @@ uniform sampler2D tex;
 out vec4 outputColor;
 
 void main(){
-    float alpha = 0.9;
+    float alpha = 1.0;
     outputColor = (1 - alpha)*vec4( fragmentColor, 1.0 ) + alpha*texture(tex, tex_coord);
 }

@@ -15,7 +15,7 @@ uniform vec3 lightColor_water;
 
 out vec4 outputColor;
 
-const float alpha = 0.01;
+const float alpha = 0.02;
 const float shineDamper = 10.0;
 const float reflectivity = 0.6;
 
@@ -25,11 +25,6 @@ void main(){
 
     vec2 tex_coord_refraction = vec2(ndc.x, ndc.y);
     vec2 tex_coord_reflection = vec2(ndc.x, -ndc.y);
-/*
-    vec2 distortedTexCoord = texture(tex_dudv, vec2(dudv_coord.x + dudv_move, dudv_coord.y)).rg * 0.1;
-    distortedTexCoord = dudv_coord + vec2(distortedTexCoord.x, distortedTexCoord.y + dudv_move);
-    vec2 totalDistortion = (texture(tex_dudv, distortedTexCoord).rg * 2.0 - 1.0) * alpha;
-*/
 
     vec2 distortion1 = texture(tex_dudv, vec2(dudv_coord.x + dudv_move, dudv_coord.y)).rg * 2.0 - 1.0;
     distortion1 *= alpha;
@@ -38,18 +33,15 @@ void main(){
     vec2 distortion = distortion1 + distortion2;
 
     tex_coord_reflection += distortion;
-    //tex_coord_reflection += totalDistortion;
     tex_coord_reflection.x = clamp(tex_coord_reflection.x, 0.001, 0.999);
     tex_coord_reflection.y = clamp(tex_coord_reflection.y, -0.999, -0.001);
 
     tex_coord_refraction += distortion;
-    //tex_coord_refraction += totalDistortion;
     tex_coord_refraction = clamp(tex_coord_refraction, 0.001, 0.999);
 
     vec4 color_reflection = texture(tex_reflection, tex_coord_reflection);
     vec4 color_refraction = texture(tex_refraction, tex_coord_refraction);
 
-    //vec4 normalMapColor = texture(tex_normal, distortedTexCoord);
     vec4 normalMapColor = texture(tex_normal, distortion);
     vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b*2.0-1.0, normalMapColor.g*2.0-1.0);
 
@@ -64,6 +56,4 @@ void main(){
 
     outputColor = mix(color_reflection, color_refraction, refractive_factor);
     outputColor = mix(outputColor, vec4(0.0, 0.0, 0.1, 1.0) + vec4(specularHighlight, 0), 0.1);
-
-    //outputColor = vec4(texture(tex_depth, dudv_coord).r, 0, 0, 1.0);
 }
