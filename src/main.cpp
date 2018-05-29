@@ -1,5 +1,3 @@
-// skybox
-
 #include "common.h"
 
 GLFWwindow *window;
@@ -183,7 +181,6 @@ int main(int argc, char **argv) {
   // FreeImage library
   FreeImage_Initialise(true);
 
-  // model_main = translate( mat4( 1.f ), vec3( 0.f, 0.f, -4.f ) );
   model_main = translate(mat4(1.f), vec3(0.f, 0.f, 0.f));
   ori_model_main = model_main;
   view_main = lookAt(eyePoint, eyePoint + eyeDirection, up);
@@ -271,6 +268,7 @@ int main(int argc, char **argv) {
     if (saveTrigger) {
       string dir = "../result/output";
       // zero padding
+      // e.g. "output0001.bmp"
       string num = to_string(frameNumber);
       num = string(4 - num.length(), '0') + num;
       string output = dir + num + ".bmp";
@@ -280,7 +278,6 @@ int main(int argc, char **argv) {
       glReadPixels(0, 0, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, GL_BGRA,
                    GL_UNSIGNED_INT_8_8_8_8_REV,
                    (GLvoid *)FreeImage_GetBits(outputImage));
-
       FreeImage_Save(FIF_BMP, outputImage, output.c_str(), 0);
       std::cout << output << " saved." << '\n';
       frameNumber++;
@@ -314,8 +311,8 @@ void computeMatricesFromInputs() {
   glfwSetCursorPos(window, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
 
   // Compute new orientation
-  //因为事先一步固定光标在屏幕中心
-  //所以 WINDOW_WIDTH/2.f - xpos 和 WINDOW_HEIGHT/2.f - ypos 成了移动量
+  // As the cursor is put at the center of the screen,
+  // (WINDOW_WIDTH/2.f - xpos) and (WINDOW_HEIGHT/2.f - ypos) are offsets
   horizontalAngle += mouseSpeed * float(xpos - WINDOW_WIDTH / 2.f);
   verticalAngle += mouseSpeed * float(-ypos + WINDOW_HEIGHT / 2.f);
 
@@ -365,8 +362,8 @@ void computeMatricesFromInputs() {
   projection_sub2 = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
                                 0.1f, farPlane);
 
-  //使 skybox 的中心永远位于 eyePoint
-  //注意：GLM 的矩阵是 column major
+  // Let the center of the skybox always at eyePoint
+  // CAUTION: the matrix of GLM is column major
   model_skybox[3][0] = ori_model_main[0][3] + eyePoint.x;
   model_skybox[3][1] = ori_model_main[1][3] + eyePoint.y;
   model_skybox[3][2] = ori_model_main[2][3] + eyePoint.z;
@@ -483,7 +480,7 @@ void init_skybox() {
 
     image = FreeImage_ConvertTo24Bits(
         FreeImage_Load(FIF_PNG, texture_images[i].c_str()));
-    // image = FreeImage_ConvertTo24Bits( image );
+
     width = FreeImage_GetWidth(image);
     height = FreeImage_GetHeight(image);
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height,
@@ -730,8 +727,7 @@ void init_water() {
       myGetUniformLocation(program_water, "tex_refraction");
   uniform_tex_dudv = myGetUniformLocation(program_water, "tex_dudv");
   uniform_tex_normal = myGetUniformLocation(program_water, "tex_normal");
-  // uniform_tex_depth = myGetUniformLocation(program_water, "tex_depth");
-  // glUniform1i(uniform_tex_depth, 6);//GL_TEXTURE6 in init_subscreen1()
+
   glUniform1i(uniform_tex_dudv, 4);   // GL_TEXTURE4
   glUniform1i(uniform_tex_normal, 5); // GL_TEXTURE5
   glUniform1i(uniform_tex_reflection, 3);
@@ -804,34 +800,6 @@ void init_subscreen1() {
   uniform_tex_subscreen1 =
       myGetUniformLocation(program_subscreen1, "tex_subscreen1");
   glUniform1i(uniform_tex_subscreen1, 2);
-  /*
-      glGenRenderbuffers(1, &subscreen1_depth);
-      glBindRenderbuffer(GL_RENDERBUFFER, subscreen1_depth);
-      glRenderbufferStorage(
-          GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-          WINDOW_WIDTH*2, WINDOW_HEIGHT*2
-      );
-      glFramebufferRenderbuffer(
-          GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, subscreen1_depth
-      );
-  */
-  // depth texture
-  /*
-  glActiveTexture(GL_TEXTURE6);
-  glGenTextures(1, &obj_depth_tex);
-      glBindTexture(GL_TEXTURE_2D, obj_depth_tex);
-      glTexImage2D(
-      GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24,
-      WINDOW_WIDTH*2, WINDOW_HEIGHT*2,
-      0, GL_DEPTH_COMPONENT, GL_FLOAT, 0
-  );
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_COMPONENT, obj_depth_tex, 0);
-  */
 
   glBindVertexArray(0);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);

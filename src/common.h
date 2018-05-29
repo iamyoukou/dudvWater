@@ -19,27 +19,26 @@ using namespace glm;
 #define WINDOW_HEIGHT 600
 
 struct face_info_t {
-    //every face is triangle
-    ivec3 vertexIndices;
-    ivec3 textureCoordIndices;
-    ivec3 normalIndices;
+  // every face is triangle
+  ivec3 vertexIndices;
+  ivec3 textureCoordIndices;
+  ivec3 normalIndices;
 };
 
 typedef vector<face_info_t> FACE_INFO;
 
 struct mesh_info_t {
-    //VERTEX_INFO vertexTable;
-    vector<vec3> vertexCoords;
-    vector<vec2> textureCoords;
-    vector<vec3> vertexNormals;
-    vector<FACE_INFO> faceInfos;
-    vector<string> mtl_names;
-    string mtl_file;
+  vector<vec3> vertexCoords;
+  vector<vec2> textureCoords;
+  vector<vec3> vertexNormals;
+  vector<FACE_INFO> faceInfos;
+  vector<string> mtl_names;
+  string mtl_file;
 };
 
-string read_file( const string );
+string read_file(const string);
 mesh_info_t load_obj(string);
-GLuint create_shader( string, GLenum );
-void printLog( GLuint& );
-GLint myGetUniformLocation( GLuint&, string );
-void drawBox( vec3, vec3 );
+GLuint create_shader(string, GLenum);
+void printLog(GLuint &);
+GLint myGetUniformLocation(GLuint &, string);
+void drawBox(vec3, vec3);
