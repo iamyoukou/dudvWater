@@ -4,8 +4,9 @@
 
 GLFWwindow *window;
 
-bool saveTrigger;
+bool saveTrigger = false;
 int faceNumber;
+int frameNumber = 0;
 
 float verticalAngle = -2.3f;
 float horizontalAngle = 5.4f;
@@ -268,14 +269,21 @@ int main(int argc, char **argv) {
     glfwSwapBuffers(window);
 
     if (saveTrigger) {
+      string dir = "../result/output";
+      // zero padding
+      string num = to_string(frameNumber);
+      num = string(4 - num.length(), '0') + num;
+      string output = dir + num + ".bmp";
+
       FIBITMAP *outputImage =
           FreeImage_AllocateT(FIT_UINT32, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2);
       glReadPixels(0, 0, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, GL_BGRA,
                    GL_UNSIGNED_INT_8_8_8_8_REV,
                    (GLvoid *)FreeImage_GetBits(outputImage));
 
-      FreeImage_Save(FIF_BMP, outputImage, "output.png", 0);
-      saveTrigger = false;
+      FreeImage_Save(FIF_BMP, outputImage, output.c_str(), 0);
+      std::cout << output << " saved." << '\n';
+      frameNumber++;
     }
 
     /* Poll for and process events */
@@ -392,7 +400,8 @@ void keyCallback(GLFWwindow *keyWnd, int key, int scancode, int action,
       break;
     }
     case GLFW_KEY_Y: {
-      saveTrigger = true;
+      saveTrigger = !saveTrigger;
+      frameNumber = 0;
       break;
     }
     default:

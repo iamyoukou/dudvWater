@@ -3,8 +3,8 @@
 Details of this technique can be found [here](https://www.youtube.com/watch?v=HusvGeEDU_U&list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh).
 
 * Use W, A, S, D to move around.
-* Use mouse to look around.
-* Use Y to save a frame. The default file name is "output.png".
+* Move your mouse to look around.
+* Use Y to save frames.
 
 Environment
 * OpenGL 4.1
@@ -13,4 +13,4 @@ Environment
 
 
 # Result
-![output](output.png)
+![output](output.gif)
