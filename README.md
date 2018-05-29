@@ -6,5 +6,11 @@ Details of this technique can be found [here](https://www.youtube.com/watch?v=Hu
 * Use mouse to look around.
 * Use Y to save a frame. The default file name is "output.png".
 
+Environment
+* OpenGL 4.1
+* GLSL 4.10
+* OS X El Capitan 10.11.x, macOS High Sierra 10.13.x
+
+
 # Result
 ![output](output.png)
