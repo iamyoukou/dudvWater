@@ -1,5 +1,6 @@
-INCS=-I/opt/local/include
-LIBS=-L/opt/local/lib -lfreeimage -lGLEW -lglfw -framework GLUT -framework OpenGL -framework Cocoa
+INCS=-I../include
+LIBS=-L../lib -lfreeimage -lGLEW -lglfw \
+ -framework GLUT -framework OpenGL -framework Cocoa
 
 SRC=../src
 
