@@ -98,7 +98,6 @@ GLuint obj_reflection_tex, obj_refraction_tex, obj_dudv_tex, obj_normal_tex;
 GLuint obj_depth_tex;
 GLuint vao_skybox, vao_model, vao_water, vao_subscreen1, vao_subscreen2;
 GLuint fbo_subscreen1, fbo_subscreen2;
-GLuint subscreen1_depth, subscreen2_depth;
 GLint uniform_model_skybox, uniform_view_skybox, uniform_projection_skybox;
 GLint uniform_model_model, uniform_view_model, uniform_projection_model;
 GLint uniform_model_water, uniform_view_water, uniform_projection_water;
@@ -788,6 +787,8 @@ void init_subscreen1() {
   glActiveTexture(GL_TEXTURE2);
   glGenTextures(1, &obj_subscreen1_tex);
   glBindTexture(GL_TEXTURE_2D, obj_subscreen1_tex);
+
+  // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
                GL_RGB, GL_UNSIGNED_BYTE, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -849,17 +850,12 @@ void init_subscreen2() {
   glActiveTexture(GL_TEXTURE3);
   glGenTextures(1, &obj_subscreen2_tex);
   glBindTexture(GL_TEXTURE_2D, obj_subscreen2_tex);
+
+  // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
                GL_RGB, GL_UNSIGNED_BYTE, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-  glGenRenderbuffers(1, &subscreen2_depth);
-  glBindRenderbuffer(GL_RENDERBUFFER, subscreen2_depth);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH * 2,
-                        WINDOW_HEIGHT * 2);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, subscreen2_depth);
 
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, obj_subscreen2_tex,
                        0);
