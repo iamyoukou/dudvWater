@@ -22,7 +22,7 @@ But unfortunately, none of them have explained why.
 
 The only thing that I can understand is as following:
 
-![myThought](./texture/myThought.png)
+![myThought](./image/myThought.png)
 
 When the original plane is (imaginarily) distorted to a curved surface,
 the normal of a certain point changes.
