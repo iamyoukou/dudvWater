@@ -139,11 +139,11 @@ int main(int argc, char **argv) {
   initOther();
   initMatrix();
 
-  initSkybox();
+  // initSkybox();
   initPool();
-  initWater();
-  initSubscreen1();
-  initSubscreen2();
+  // initWater();
+  // initSubscreen1();
+  // initSubscreen2();
 
   // a rough way to solve cursor position initialization problem
   // must call glfwPollEvents once to activate glfwSetCursorPos
@@ -159,59 +159,59 @@ int main(int argc, char **argv) {
 
     computeMatricesFromInputs();
 
-    glUseProgram(program_water);
-    uniform_move = myGetUniformLocation(program_water, "dudv_move");
-    dudv_move += 0.0005f; // speed
-    dudv_move = fmod(dudv_move, 1.0f);
-    glUniform1f(uniform_move, dudv_move);
+    // glUseProgram(program_water);
+    // uniform_move = myGetUniformLocation(program_water, "dudv_move");
+    // dudv_move += 0.0005f; // speed
+    // dudv_move = fmod(dudv_move, 1.0f);
+    // glUniform1f(uniform_move, dudv_move);
 
-    uniform_camera_coord = myGetUniformLocation(program_water, "camera_coord");
-    glUniform3fv(uniform_camera_coord, 1, value_ptr(eyePoint));
-    glUseProgram(0);
+    // uniform_camera_coord = myGetUniformLocation(program_water,
+    // "camera_coord"); glUniform3fv(uniform_camera_coord, 1,
+    // value_ptr(eyePoint)); glUseProgram(0);
 
     // render to fbo_subscreen1
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen1);
-    glClearColor(171 / 256.f, 178 / 256.f, 191 / 256.f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_CLIP_DISTANCE0);
-    glDisable(GL_CLIP_DISTANCE1);
-
-    vec4 planeEquation0 = vec4(0, 1, 0, -2.2);
-    glUseProgram(program_model);
-    GLuint uniform_clipPlane0 =
-        myGetUniformLocation(program_model, "clipPlane0");
-    glUniform4fv(uniform_clipPlane0, 1, value_ptr(planeEquation0));
-    glUseProgram(0);
-
-    drawSkybox(model_skybox, view_main, projection_main);
-    drawModels(model_main, view_main, projection_main);
+    // glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen1);
+    // glClearColor(171 / 256.f, 178 / 256.f, 191 / 256.f, 1.0f);
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //
+    // glEnable(GL_CLIP_DISTANCE0);
+    // glDisable(GL_CLIP_DISTANCE1);
+    //
+    // vec4 planeEquation0 = vec4(0, 1, 0, -2.2);
+    // glUseProgram(program_model);
+    // GLuint uniform_clipPlane0 =
+    //     myGetUniformLocation(program_model, "clipPlane0");
+    // glUniform4fv(uniform_clipPlane0, 1, value_ptr(planeEquation0));
+    // glUseProgram(0);
+    //
+    // drawSkybox(model_skybox, view_main, projection_main);
+    // drawModels(model_main, view_main, projection_main);
 
     // render to fbo_subscreen2
-    glDisable(GL_CLIP_DISTANCE0);
-    glEnable(GL_CLIP_DISTANCE1);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen2);
-    glClearColor(171 / 256.f, 178 / 256.f, 191 / 256.f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(program_model);
-    vec4 planeEquation1 = vec4(0, 1, 0, -3);
-    GLuint uniform_clipPlane1 =
-        myGetUniformLocation(program_model, "clipPlane1");
-    glUniform4fv(uniform_clipPlane1, 1, value_ptr(planeEquation1));
-    glUseProgram(0);
-
-    drawSkybox(model_skybox, view_sub2, projection_sub2);
-    drawModels(model_sub2, view_sub2, projection_sub2);
+    // glDisable(GL_CLIP_DISTANCE0);
+    // glEnable(GL_CLIP_DISTANCE1);
+    //
+    // glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen2);
+    // glClearColor(171 / 256.f, 178 / 256.f, 191 / 256.f, 1.0f);
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //
+    // glUseProgram(program_model);
+    // vec4 planeEquation1 = vec4(0, 1, 0, -3);
+    // GLuint uniform_clipPlane1 =
+    //     myGetUniformLocation(program_model, "clipPlane1");
+    // glUniform4fv(uniform_clipPlane1, 1, value_ptr(planeEquation1));
+    // glUseProgram(0);
+    //
+    // drawSkybox(model_skybox, view_sub2, projection_sub2);
+    // drawModels(model_sub2, view_sub2, projection_sub2);
 
     // render to main screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
-    drawSkybox(model_skybox, view_main, projection_main);
+    // drawSkybox(model_skybox, view_main, projection_main);
     drawModels(model_main, view_main, projection_main);
-    drawWater(model_main, view_main, projection_main);
+    // drawWater(model_main, view_main, projection_main);
     // drawSubscreen1();
     // drawSubscreen2();
 
