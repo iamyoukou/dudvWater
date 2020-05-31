@@ -29,6 +29,8 @@ GLint uniLightColor, uniLightPosition, uniLightPower;
 GLint uniTexBase;
 GLint uniEyePoint;
 
+Mesh pool;
+
 void computeMatricesFromInputs(mat4 &, mat4 &);
 void keyCallback(GLFWwindow *, int, int, int, int);
 
@@ -49,20 +51,8 @@ int main(int argc, char **argv) {
   initMatrix();
   initLight();
 
-  // prepare mesh data
-  // Mesh cube = loadObj("cube.obj");
-  // initMesh(cube);
-
-  Mesh pool = loadObj("./mesh/pool.obj");
+  pool = loadObj("./mesh/pool.obj");
   initMesh(pool);
-
-  // Mesh sphere = loadObj("./mesh/sphere.obj");
-  // initMesh(sphere);
-  // findAABB(sphere);
-
-  // sphere.translate(vec3(2, 2, 2));
-  // sphere.scale(vec3(2, 2, 2));
-  // updateMesh(sphere);
 
   // a rough way to solve cursor position initialization problem
   // must call glfwPollEvents once to activate glfwSetCursorPos
@@ -305,9 +295,8 @@ void initShader() {
 }
 
 void initTexture() { // base texture
-  // tboBase = createTexture(10, exeShader, "texBase",
-  // "./res/rock_basecolor.jpg",
-  //                         FIF_JPEG);
+  tboBase =
+      createTexture(10, exeShader, "texBase", "./image/stone.png", FIF_PNG);
   //
   // // normal texture
   // tboNormal = createTexture(11, exeShader, "texNormal",
@@ -316,7 +305,7 @@ void initTexture() { // base texture
 }
 
 void releaseResource() {
-  // glDeleteTextures(1, &tboBase);
+  glDeleteTextures(1, &tboBase);
 
   glfwTerminate();
   FreeImage_DeInitialise();
