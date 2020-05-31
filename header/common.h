@@ -19,27 +19,51 @@ using namespace glm;
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
-struct face_info_t {
-  // every face is triangle
-  ivec3 vertexIndices;
-  ivec3 textureCoordIndices;
-  ivec3 normalIndices;
+typedef struct {
+  // data index
+  GLuint v1, v2, v3;
+  GLuint vt1, vt2, vt3;
+  GLuint vn1, vn2, vn3;
+} Face;
+
+class Mesh {
+public:
+  // mesh data
+  std::vector<glm::vec3> vertices;
+  std::vector<glm::vec2> uvs;
+  std::vector<glm::vec3> faceNormals;
+  std::vector<Face> faces;
+
+  // opengl data
+  GLuint vboVtxs, vboUvs, vboNormals;
+  GLuint vao;
+
+  // aabb
+  vec3 min, max;
+
+  /* Constructors */
+  Mesh(){};
+  ~Mesh() {
+    glDeleteBuffers(1, &vboVtxs);
+    glDeleteBuffers(1, &vboUvs);
+    glDeleteBuffers(1, &vboNormals);
+    glDeleteVertexArrays(1, &vao);
+  };
+
+  /* Member functions */
+  void translate(glm::vec3);
+  void scale(glm::vec3);
+  void rotate(glm::vec3);
 };
 
-typedef vector<face_info_t> FACE_INFO;
-
-struct mesh_info_t {
-  vector<vec3> vertexCoords;
-  vector<vec2> textureCoords;
-  vector<vec3> vertexNormals;
-  vector<FACE_INFO> faceInfos;
-  vector<string> mtl_names;
-  string mtl_file;
-};
-
-string read_file(const string);
-mesh_info_t load_obj(string);
-GLuint create_shader(string, GLenum);
+std::string readFile(const std::string);
+Mesh loadObj(std::string);
 void printLog(GLuint &);
 GLint myGetUniformLocation(GLuint &, string);
+GLuint buildShader(string, string);
+GLuint compileShader(string, GLenum);
+GLuint linkShader(GLuint, GLuint);
+void initMesh(Mesh &);
+void updateMesh(Mesh &);
+void findAABB(Mesh &);
 void drawBox(vec3, vec3);

@@ -5,35 +5,35 @@ layout( location = 2 ) in vec3 normal;
 
 out vec3 fragmentColor;
 out vec2 tex_coord;
-out float gl_ClipDistance[2];
+// out float gl_ClipDistance[2];
 
-uniform mat4 model_model, view_model, projection_model;
+uniform mat4 M, V, P;
 uniform vec3 lightColor, lightPosition;
 uniform vec3 diffuseColor, ambientColor, specularColor;
 uniform float lightPower;
-uniform vec4 clipPlane0, clipPlane1;
+// uniform vec4 clipPlane0, clipPlane1;
 
 void main(){
-    //projection_model plane
-    gl_Position = projection_model * view_model * model_model * vec4( vertex_coord, 1.0 );
-    gl_ClipDistance[0] = -dot(model_model * vec4(vertex_coord, 1.0), clipPlane0);
-    gl_ClipDistance[1] = dot(model_model * vec4(vertex_coord, 1.0), clipPlane1);
+    //P plane
+    gl_Position = P * V * M * vec4( vertex_coord, 1.0 );
+    // gl_ClipDistance[0] = -dot(M * vec4(vertex_coord, 1.0), clipPlane0);
+    // gl_ClipDistance[1] = dot(M * vec4(vertex_coord, 1.0), clipPlane1);
 
-    //view_model space
-    vec3 vPosition_viewspace = ( view_model * model_model * vec4( vertex_coord, 1.0 ) ).xyz;
+    //V space
+    vec3 vPosition_viewspace = ( V * M * vec4( vertex_coord, 1.0 ) ).xyz;
 
     //transforming normal is different with transforming vertex
     vec3 vNormal_viewspace = (
-        transpose( inverse( view_model ) ) * model_model * vec4( normal, 0.0 ) ).xyz;
+        transpose( inverse( V ) ) * M * vec4( normal, 0.0 ) ).xyz;
     vNormal_viewspace = normalize( vNormal_viewspace );
 
     //point light
-    vec3 lightPosition_viewspace = ( view_model * model_model * vec4( lightPosition, 1.0 ) ).xyz;
+    vec3 lightPosition_viewspace = ( V * M * vec4( lightPosition, 1.0 ) ).xyz;
     vec3 lightDirection_viewspace = lightPosition_viewspace - vPosition_viewspace;
     lightDirection_viewspace = normalize( lightDirection_viewspace );
 
     //eye direction
-    //in view_model space, eye position is (0 0 0)
+    //in V space, eye position is (0 0 0)
     vec3 eyeDirection_viewspace = vec3( 0.0 ) - vPosition_viewspace;
     eyeDirection_viewspace = normalize( eyeDirection_viewspace );
 
