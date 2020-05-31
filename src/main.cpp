@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
 
   // Open a window and create its OpenGL context
   window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT,
-                            "GLFW window with AntTweakBar", NULL, NULL);
+                            "Dudv water simulation", NULL, NULL);
 
   if (window == NULL) {
     std::cout << "Failed to open GLFW window." << std::endl;
