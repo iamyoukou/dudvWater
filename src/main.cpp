@@ -120,83 +120,36 @@ GLuint program_skybox, program_model, program_water, program_subscreen1,
 void computeMatricesFromInputs();
 void keyCallback(GLFWwindow *, int, int, int, int);
 GLuint loadCubemap(vector<string> &);
-void init_skybox();
-void init_3d_model();
-void init_water();
-void init_subscreen1();
-void init_subscreen2();
-void drawSkybox(mat4 &M, mat4 &V, mat4 &P);
-void drawModels(mat4 &M, mat4 &V, mat4 &P);
-void drawWater(mat4 &M, mat4 &V, mat4 &P);
+void initGL();
+void initOther();
+void initMatrix();
+void initSkybox();
+void initPool();
+void initWater();
+void initSubscreen1();
+void initSubscreen2();
+void drawSkybox(mat4 &, mat4 &, mat4 &);
+void drawModels(mat4 &, mat4 &, mat4 &);
+void drawWater(mat4 &, mat4 &, mat4 &);
 void drawSubscreen1();
 void drawSubscreen2();
 
 int main(int argc, char **argv) {
-  // Initialise GLFW
-  if (!glfwInit()) {
-    fprintf(stderr, "Failed to initialize GLFW\n");
-    getchar();
-    return -1;
-  }
+  initGL();
+  initOther();
+  initMatrix();
 
-  // without setting GLFW_CONTEXT_VERSION_MAJOR and _MINOR，
-  // OpenGL 1.x will be used
-  glfwWindowHint(GLFW_SAMPLES, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  initSkybox();
+  initPool();
+  initWater();
+  initSubscreen1();
+  initSubscreen2();
 
-  // must be used if OpenGL version >= 3.0
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-  // Open a window and create its OpenGL context
-  window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT,
-                            "Dudv water simulation", NULL, NULL);
-
-  if (window == NULL) {
-    std::cout << "Failed to open GLFW window." << std::endl;
-    glfwTerminate();
-    return -1;
-  }
-
-  glfwMakeContextCurrent(window);
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  glfwSetKeyCallback(window, keyCallback);
-
-  /* Initialize GLEW */
-  // without this, glGenVertexArrays will report ERROR!
-  glewExperimental = GL_TRUE;
-
-  if (glewInit() != GLEW_OK) {
-    fprintf(stderr, "Failed to initialize GLEW\n");
-    getchar();
-    glfwTerminate();
-    return -1;
-  }
-
-  glEnable(GL_CULL_FACE);
-  glEnable(GL_DEPTH_TEST); // must enable depth test!!
-
-  // FreeImage library
-  FreeImage_Initialise(true);
-
-  model_main = translate(mat4(1.f), vec3(0.f, 0.f, 0.f));
-  ori_model_main = model_main;
-  view_main = lookAt(eyePoint, eyePoint + eyeDirection, up);
-  projection_main = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
-                                0.01f, farPlane);
-
-  model_sub2 = model_main;
-  ori_model_sub2 = model_main;
-  view_sub2 = lookAt(eyePoint2, eyePoint2 + eyeDirection2, up);
-  projection_sub2 = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
-                                0.01f, farPlane);
-
-  init_skybox();
-  init_3d_model();
-  init_water();
-  init_subscreen1();
-  init_subscreen2();
+  // a rough way to solve cursor position initialization problem
+  // must call glfwPollEvents once to activate glfwSetCursorPos
+  // this is a glfw mechanism problem
+  glfwPollEvents();
+  glfwSetCursorPos(window, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {
@@ -434,13 +387,13 @@ GLuint loadCubemap(vector<string> &faces) {
   return textureID;
 }
 
-void init_skybox() {
+void initSkybox() {
   // shaders
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("./shader/skybox_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("./shader/skybox_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/vsSkybox.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/fsSkybox.glsl", GL_FRAGMENT_SHADER);
 
   program_skybox = glCreateProgram();
   glAttachShader(program_skybox, vs);
@@ -513,13 +466,13 @@ void init_skybox() {
   glUseProgram(0);
 }
 
-void init_3d_model() {
+void initPool() {
   // shaders
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("./shader/model_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("./shader/model_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/vsPool.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/fsPool.glsl", GL_FRAGMENT_SHADER);
 
   program_model = glCreateProgram();
   glAttachShader(program_model, vs);
@@ -652,13 +605,13 @@ void init_3d_model() {
   delete[] normal_coords;
 }
 
-void init_water() {
+void initWater() {
   // shaders
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("./shader/water_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("./shader/water_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/vsWater.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/fsWater.glsl", GL_FRAGMENT_SHADER);
 
   program_water = glCreateProgram();
   glAttachShader(program_water, vs);
@@ -744,13 +697,13 @@ void init_water() {
   glUseProgram(0);
 }
 
-void init_subscreen1() {
+void initSubscreen1() {
   // shaders
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("./shader/subscreen1_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("./shader/subscreen1_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/vsSubscreen1.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/fsSubscreen1.glsl", GL_FRAGMENT_SHADER);
 
   program_subscreen1 = glCreateProgram();
   glAttachShader(program_subscreen1, vs);
@@ -807,13 +760,13 @@ void init_subscreen1() {
   glUseProgram(0);
 }
 
-void init_subscreen2() {
+void initSubscreen2() {
   // shaders
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("./shader/subscreen2_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("./shader/subscreen2_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/vsSubscreen2.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/fsSubscreen2.glsl", GL_FRAGMENT_SHADER);
 
   program_subscreen2 = glCreateProgram();
   glAttachShader(program_subscreen2, vs);
@@ -905,4 +858,70 @@ void drawSubscreen2() {
   glUseProgram(program_subscreen2);
   glBindVertexArray(vao_subscreen2);
   glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void initGL() {
+  // Initialise GLFW
+  if (!glfwInit()) {
+    fprintf(stderr, "Failed to initialize GLFW\n");
+    getchar();
+    exit(EXIT_FAILURE);
+  }
+
+  // without setting GLFW_CONTEXT_VERSION_MAJOR and _MINOR，
+  // OpenGL 1.x will be used
+  glfwWindowHint(GLFW_SAMPLES, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+
+  // must be used if OpenGL version >= 3.0
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+  // Open a window and create its OpenGL context
+  window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT,
+                            "Dudv water simulation", NULL, NULL);
+
+  if (window == NULL) {
+    std::cout << "Failed to open GLFW window." << std::endl;
+    glfwTerminate();
+    exit(EXIT_FAILURE);
+  }
+
+  glfwMakeContextCurrent(window);
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  glfwSetKeyCallback(window, keyCallback);
+
+  /* Initialize GLEW */
+  // without this, glGenVertexArrays will report ERROR!
+  glewExperimental = GL_TRUE;
+
+  if (glewInit() != GLEW_OK) {
+    fprintf(stderr, "Failed to initialize GLEW\n");
+    getchar();
+    glfwTerminate();
+    exit(EXIT_FAILURE);
+  }
+
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST); // must enable depth test!!
+}
+
+void initOther() {
+  // FreeImage library
+  FreeImage_Initialise(true);
+}
+
+void initMatrix() {
+  model_main = translate(mat4(1.f), vec3(0.f, 0.f, 0.f));
+  ori_model_main = model_main;
+  view_main = lookAt(eyePoint, eyePoint + eyeDirection, up);
+  projection_main = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
+                                0.01f, farPlane);
+
+  model_sub2 = model_main;
+  ori_model_sub2 = model_main;
+  view_sub2 = lookAt(eyePoint2, eyePoint2 + eyeDirection2, up);
+  projection_sub2 = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
+                                0.01f, farPlane);
 }
