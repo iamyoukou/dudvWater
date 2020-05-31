@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
     glfwSwapBuffers(window);
 
     if (saveTrigger) {
-      string dir = "../result/output";
+      string dir = "./result/output";
       // zero padding
       // e.g. "output0001.bmp"
       string num = to_string(frameNumber);
@@ -439,8 +439,8 @@ void init_skybox() {
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("../shader/skybox_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("../shader/skybox_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/skybox_vs.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/skybox_fs.glsl", GL_FRAGMENT_SHADER);
 
   program_skybox = glCreateProgram();
   glAttachShader(program_skybox, vs);
@@ -462,12 +462,12 @@ void init_skybox() {
 
   // texture
   vector<string> texture_images;
-  texture_images.push_back("../texture/right.png");
-  texture_images.push_back("../texture/left.png");
-  texture_images.push_back("../texture/bottom.png");
-  texture_images.push_back("../texture/top.png");
-  texture_images.push_back("../texture/back.png");
-  texture_images.push_back("../texture/front.png");
+  texture_images.push_back("./image/right.png");
+  texture_images.push_back("./image/left.png");
+  texture_images.push_back("./image/bottom.png");
+  texture_images.push_back("./image/top.png");
+  texture_images.push_back("./image/back.png");
+  texture_images.push_back("./image/front.png");
 
   glActiveTexture(GL_TEXTURE0);
   glGenTextures(1, &obj_skybox_tex);
@@ -518,8 +518,8 @@ void init_3d_model() {
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("../shader/model_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("../shader/model_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/model_vs.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/model_fs.glsl", GL_FRAGMENT_SHADER);
 
   program_model = glCreateProgram();
   glAttachShader(program_model, vs);
@@ -533,7 +533,7 @@ void init_3d_model() {
               << "model shaders" << '\n';
   }
 
-  mesh_info_t mesh = load_obj("../model/pool.obj");
+  mesh_info_t mesh = load_obj("./mesh/pool.obj");
 
   // write vertex coordinate to array
   FACE_INFO &faces = mesh.faceInfos[0];
@@ -601,7 +601,7 @@ void init_3d_model() {
   glEnableVertexAttribArray(2);
 
   // texture
-  FIBITMAP *poolImage = FreeImage_Load(FIF_PNG, "../texture/stone.png");
+  FIBITMAP *poolImage = FreeImage_Load(FIF_PNG, "./image/stone.png");
 
   glActiveTexture(GL_TEXTURE1);
   glGenTextures(1, &obj_pool_tex);
@@ -657,8 +657,8 @@ void init_water() {
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("../shader/water_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("../shader/water_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/water_vs.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/water_fs.glsl", GL_FRAGMENT_SHADER);
 
   program_water = glCreateProgram();
   glAttachShader(program_water, vs);
@@ -697,7 +697,7 @@ void init_water() {
                      value_ptr(projection_main));
 
   // dudv texture
-  FIBITMAP *dudv_image = FreeImage_Load(FIF_PNG, "../texture/dudv2.png");
+  FIBITMAP *dudv_image = FreeImage_Load(FIF_PNG, "./image/dudv2.png");
 
   glActiveTexture(GL_TEXTURE4);
   glGenTextures(1, &obj_dudv_tex);
@@ -709,7 +709,7 @@ void init_water() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
   // normal map texture
-  FIBITMAP *normal_image = FreeImage_Load(FIF_PNG, "../texture/normalMap2.png");
+  FIBITMAP *normal_image = FreeImage_Load(FIF_PNG, "./image/normalMap2.png");
 
   glActiveTexture(GL_TEXTURE5);
   glGenTextures(1, &obj_normal_tex);
@@ -749,8 +749,8 @@ void init_subscreen1() {
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("../shader/subscreen1_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("../shader/subscreen1_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/subscreen1_vs.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/subscreen1_fs.glsl", GL_FRAGMENT_SHADER);
 
   program_subscreen1 = glCreateProgram();
   glAttachShader(program_subscreen1, vs);
@@ -812,8 +812,8 @@ void init_subscreen2() {
   GLuint vs, fs;
   GLint link_ok;
 
-  vs = create_shader("../shader/subscreen2_vs.glsl", GL_VERTEX_SHADER);
-  fs = create_shader("../shader/subscreen2_fs.glsl", GL_FRAGMENT_SHADER);
+  vs = create_shader("./shader/subscreen2_vs.glsl", GL_VERTEX_SHADER);
+  fs = create_shader("./shader/subscreen2_fs.glsl", GL_FRAGMENT_SHADER);
 
   program_subscreen2 = glCreateProgram();
   glAttachShader(program_subscreen2, vs);
