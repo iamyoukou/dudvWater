@@ -1,10 +1,10 @@
 #version 330
-layout( location = 0 ) in vec3 vertex_coord;
-layout( location = 1 ) in vec2 texture_coord;
+layout( location = 0 ) in vec3 vtxCoord;
+layout( location = 1 ) in vec2 vtxUv;
 layout( location = 2 ) in vec3 normal;
 
-out vec3 fragmentColor;
-out vec2 tex_coord;
+out vec3 fragColor;
+out vec2 uv;
 // out float gl_ClipDistance[2];
 
 uniform mat4 M, V, P;
@@ -15,12 +15,12 @@ uniform float lightPower;
 
 void main(){
     //P plane
-    gl_Position = P * V * M * vec4( vertex_coord, 1.0 );
-    // gl_ClipDistance[0] = -dot(M * vec4(vertex_coord, 1.0), clipPlane0);
-    // gl_ClipDistance[1] = dot(M * vec4(vertex_coord, 1.0), clipPlane1);
+    gl_Position = P * V * M * vec4( vtxCoord, 1.0 );
+    // gl_ClipDistance[0] = -dot(M * vec4(vtxCoord, 1.0), clipPlane0);
+    // gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
 
     //V space
-    vec3 vPosition_viewspace = ( V * M * vec4( vertex_coord, 1.0 ) ).xyz;
+    vec3 vPosition_viewspace = ( V * M * vec4( vtxCoord, 1.0 ) ).xyz;
 
     //transforming normal is different with transforming vertex
     vec3 vNormal_viewspace = (
@@ -57,15 +57,15 @@ void main(){
 
     //diffuseColor
     //with distance damping
-    fragmentColor = diffuseColor * lightColor * lightPower * cosTheta
+    fragColor = diffuseColor * lightColor * lightPower * cosTheta
         / ( distance_viewspace * distance_viewspace );
 
     //ambientColor
-    fragmentColor += ambientColor;
+    fragColor += ambientColor;
 
     //specularColor
     //with no distance damping
-    fragmentColor += specularColor * lightColor * lightPower * pow( cosAlpha, 5 );
+    fragColor += specularColor * lightColor * lightPower * pow( cosAlpha, 5 );
 
-    tex_coord = texture_coord;
+    uv = vtxUv;
 }
