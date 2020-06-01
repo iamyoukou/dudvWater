@@ -60,10 +60,12 @@ GLint uniSkyboxM, uniSkyboxV, uniSkyboxP;
 GLint uniMeshM, uniMeshV, uniMeshP;
 GLint uniLightColor, uniLightPos, uniLightPower;
 GLint uniDiffuse, uniAmbient, uniSpecular;
+GLint uniPoolTexBase;
 mat4 oriSkyboxM, skyboxM, skyboxV, skyboxP;
 mat4 meshM, meshV, meshP;
 GLuint vsSkybox, fsSkybox, vsModel, fsModel;
-GLuint shaderSkybox, shaderMesh;
+GLuint shaderSkybox, shaderPool;
+GLuint tboPoolBase;
 
 void computeMatricesFromInputs();
 void keyCallback(GLFWwindow *, int, int, int, int);
@@ -71,14 +73,17 @@ void keyCallback(GLFWwindow *, int, int, int, int);
 void initGL();
 void initOther();
 void initShader();
+void initTexture();
 void initMatrix();
 void initLight();
 void initSkybox();
+GLuint createTexture(GLuint, string, FREE_IMAGE_FORMAT);
 
 int main(int argc, char **argv) {
   initGL();
   initOther();
   initShader();
+  initTexture();
   initMatrix();
   initLight();
 
@@ -110,7 +115,8 @@ int main(int argc, char **argv) {
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     // draw 3d models
-    glUseProgram(shaderMesh);
+    glUseProgram(shaderPool);
+    glUniform1i(uniPoolTexBase, 10); // change base color
     glBindVertexArray(mesh.vao);
     glDrawArrays(GL_TRIANGLES, 0, mesh.faces.size() * 3);
 
@@ -200,7 +206,7 @@ void computeMatricesFromInputs() {
   glUniformMatrix4fv(uniSkyboxM, 1, GL_FALSE, value_ptr(skyboxM));
 
   // update for mesh
-  glUseProgram(shaderMesh);
+  glUseProgram(shaderPool);
   meshV = newV;
   meshP = newP;
   glUniformMatrix4fv(uniMeshV, 1, GL_FALSE, value_ptr(meshV));
@@ -294,7 +300,8 @@ void initShader() {
   shaderSkybox =
       buildShader("./shader/vsSkybox.glsl", "./shader/fsSkybox.glsl");
 
-  shaderMesh = buildShader("./shader/vsPool.glsl", "./shader/fsPool.glsl");
+  shaderPool = buildShader("./shader/vsPool.glsl", "./shader/fsPool.glsl");
+  uniPoolTexBase = myGetUniformLocation(shaderPool, "texBase");
 }
 
 void initMatrix() {
@@ -307,15 +314,15 @@ void initMatrix() {
                   farPlane);
 
   // mesh
-  glUseProgram(shaderMesh);
+  glUseProgram(shaderPool);
 
   meshM = M;
   meshV = V;
   meshP = P;
 
-  uniMeshM = myGetUniformLocation(shaderMesh, "M");
-  uniMeshV = myGetUniformLocation(shaderMesh, "V");
-  uniMeshP = myGetUniformLocation(shaderMesh, "P");
+  uniMeshM = myGetUniformLocation(shaderPool, "M");
+  uniMeshV = myGetUniformLocation(shaderPool, "V");
+  uniMeshP = myGetUniformLocation(shaderPool, "P");
 
   glUniformMatrix4fv(uniMeshM, 1, GL_FALSE, value_ptr(meshM));
   glUniformMatrix4fv(uniMeshV, 1, GL_FALSE, value_ptr(meshV));
@@ -339,24 +346,24 @@ void initMatrix() {
 }
 
 void initLight() {
-  glUseProgram(shaderMesh);
+  glUseProgram(shaderPool);
 
-  uniLightColor = myGetUniformLocation(shaderMesh, "lightColor");
+  uniLightColor = myGetUniformLocation(shaderPool, "lightColor");
   glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
 
-  uniLightPos = myGetUniformLocation(shaderMesh, "lightPosition");
+  uniLightPos = myGetUniformLocation(shaderPool, "lightPosition");
   glUniform3fv(uniLightPos, 1, value_ptr(lightPosition));
 
-  uniLightPower = myGetUniformLocation(shaderMesh, "lightPower");
+  uniLightPower = myGetUniformLocation(shaderPool, "lightPower");
   glUniform1f(uniLightPower, lightPower);
 
-  uniDiffuse = myGetUniformLocation(shaderMesh, "diffuseColor");
+  uniDiffuse = myGetUniformLocation(shaderPool, "diffuseColor");
   glUniform3fv(uniDiffuse, 1, value_ptr(materialDiffuse));
 
-  uniAmbient = myGetUniformLocation(shaderMesh, "ambientColor");
+  uniAmbient = myGetUniformLocation(shaderPool, "ambientColor");
   glUniform3fv(uniAmbient, 1, value_ptr(materialAmbient));
 
-  uniSpecular = myGetUniformLocation(shaderMesh, "specularColor");
+  uniSpecular = myGetUniformLocation(shaderPool, "specularColor");
   glUniform3fv(uniSpecular, 1, value_ptr(materialSpecular));
 }
 
@@ -409,4 +416,30 @@ void initSkybox() {
                GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
   glEnableVertexAttribArray(0);
+}
+
+GLuint createTexture(GLuint texUnit, string imgDir, FREE_IMAGE_FORMAT imgType) {
+  glActiveTexture(GL_TEXTURE0 + texUnit);
+
+  FIBITMAP *texImage =
+      FreeImage_ConvertTo24Bits(FreeImage_Load(imgType, imgDir.c_str()));
+
+  GLuint tboTex;
+  glGenTextures(1, &tboTex);
+  glBindTexture(GL_TEXTURE_2D, tboTex);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FreeImage_GetWidth(texImage),
+               FreeImage_GetHeight(texImage), 0, GL_BGR, GL_UNSIGNED_BYTE,
+               (void *)FreeImage_GetBits(texImage));
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  // release
+  FreeImage_Unload(texImage);
+
+  return tboTex;
+}
+
+void initTexture() {
+  // texture for pool
+  tboPoolBase = createTexture(10, "./image/stone.png", FIF_PNG);
+  glActiveTexture(GL_TEXTURE0 + 10);
 }
