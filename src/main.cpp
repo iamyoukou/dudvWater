@@ -27,9 +27,9 @@ vec3 lightPosition = vec3(3.f, 3.f, 3.f);
 vec3 lightColor = vec3(1.f, 1.f, 1.f);
 float lightPower = 12.f;
 
-vec3 materialDiffuseColor = vec3(0.1f, 0.1f, 0.1f);
-vec3 materialAmbientColor = vec3(0.1f, 0.1f, 0.1f);
-vec3 materialSpecularColor = vec3(1.f, 1.f, 1.f);
+vec3 materialDiffuse = vec3(0.1f, 0.1f, 0.1f);
+vec3 materialAmbient = vec3(0.1f, 0.1f, 0.1f);
+vec3 materialSpecular = vec3(1.f, 1.f, 1.f);
 
 const float SKYBOX_SIZE = 500.f;
 GLfloat skyboxVertices[] = {
@@ -102,7 +102,7 @@ GLint uniform_model_water, uniform_view_water, uniform_projection_water;
 GLint uniform_lightColor, uniform_lightPosition, uniform_lightPower,
     uniform_lightDirection;
 GLint uniform_diffuseColor, uniform_ambientColor, uniform_specularColor;
-GLint uniform_tex, uniform_tex_subscreen1, uniform_tex_subscreen2;
+GLint uniPoolTexBase, uniform_tex_subscreen1, uniform_tex_subscreen2;
 GLint uniform_tex_refraction, uniform_tex_reflection, uniform_tex_dudv,
     uniform_tex_normal;
 GLint uniform_tex_depth;
@@ -114,6 +114,7 @@ mat4 ori_model_sub2, model_sub2, view_sub2, projection_sub2;
 mat4 model_skybox;
 GLuint program_skybox, shaderPool, program_water, program_subscreen1,
     program_subscreen2;
+GLuint tboPoolBase;
 
 Mesh pool;
 
@@ -122,6 +123,8 @@ void keyCallback(GLFWwindow *, int, int, int, int);
 GLuint loadCubemap(vector<string> &);
 void initGL();
 void initOther();
+void initShader();
+void initTexture();
 void initMatrix();
 void initSkybox();
 void initPool();
@@ -133,10 +136,13 @@ void drawModels(mat4 &, mat4 &, mat4 &);
 void drawWater(mat4 &, mat4 &, mat4 &);
 void drawSubscreen1();
 void drawSubscreen2();
+GLuint createTexture(GLuint, string, FREE_IMAGE_FORMAT);
 
 int main(int argc, char **argv) {
   initGL();
   initOther();
+  initShader();
+  initTexture();
   initMatrix();
 
   // initSkybox();
@@ -157,6 +163,7 @@ int main(int argc, char **argv) {
     glClearColor(97 / 256.f, 175 / 256.f, 239 / 256.f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // view control
     computeMatricesFromInputs();
 
     // glUseProgram(program_water);
@@ -215,7 +222,9 @@ int main(int argc, char **argv) {
     // drawSubscreen1();
     // drawSubscreen2();
 
+    // draw mesh
     glUseProgram(shaderPool);
+    glUniform1i(uniPoolTexBase, 10); // change base color
     glBindVertexArray(pool.vao);
     glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
 
@@ -480,29 +489,9 @@ GLuint loadCubemap(vector<string> &faces) {
 // }
 
 void initPool() {
-  // shaders
-
-  // build shader
-  shaderPool = buildShader("./shader/vsPool.glsl", "./shader/fsPool.glsl");
-  glUseProgram(shaderPool);
-
+  // mesh
   pool = loadObj("./mesh/pool.obj");
   initMesh(pool);
-
-  // texture
-  FIBITMAP *poolImage = FreeImage_Load(FIF_PNG, "./image/stone.png");
-
-  glActiveTexture(GL_TEXTURE1);
-  glGenTextures(1, &obj_pool_tex);
-  glBindTexture(GL_TEXTURE_2D, obj_pool_tex);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FreeImage_GetWidth(poolImage),
-               FreeImage_GetHeight(poolImage), 0, GL_BGR, GL_UNSIGNED_BYTE,
-               (void *)FreeImage_GetBits(poolImage));
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-  uniform_tex = myGetUniformLocation(shaderPool, "texBase");
-  glUniform1i(uniform_tex, 1); // the 2nd parameter must be same as GL_TEXTUREi
 
   uniPoolM = myGetUniformLocation(shaderPool, "M");
   uniPoolV = myGetUniformLocation(shaderPool, "V");
@@ -523,20 +512,16 @@ void initPool() {
   glUniform1f(uniform_lightPower, lightPower);
 
   uniform_diffuseColor = myGetUniformLocation(shaderPool, "diffuseColor");
-  glUniform3fv(uniform_diffuseColor, 1, value_ptr(materialDiffuseColor));
+  glUniform3fv(uniform_diffuseColor, 1, value_ptr(materialDiffuse));
 
   uniform_ambientColor = myGetUniformLocation(shaderPool, "ambientColor");
-  glUniform3fv(uniform_ambientColor, 1, value_ptr(materialAmbientColor));
+  glUniform3fv(uniform_ambientColor, 1, value_ptr(materialAmbient));
 
   uniform_specularColor = myGetUniformLocation(shaderPool, "specularColor");
-  glUniform3fv(uniform_specularColor, 1, value_ptr(materialSpecularColor));
+  glUniform3fv(uniform_specularColor, 1, value_ptr(materialSpecular));
 
   glBindVertexArray(0);
   glUseProgram(0);
-
-  // delete[] vertex_coords;
-  // delete[] texture_coords;
-  // delete[] normal_coords;
 }
 
 // void initWater() {
@@ -771,14 +756,6 @@ void drawSkybox(mat4 &M, mat4 &V, mat4 &P) {
   glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-void drawModels(mat4 &M, mat4 &V, mat4 &P) {
-  glUseProgram(shaderPool);
-  glBindVertexArray(pool.vao);
-  glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(V));
-  glUniformMatrix4fv(uniPoolP, 1, GL_FALSE, value_ptr(P));
-  glDrawArrays(GL_TRIANGLES, 0, faceNumber * 3);
-}
-
 void drawWater(mat4 &M, mat4 &V, mat4 &P) {
   glUseProgram(program_water);
   glBindVertexArray(vao_water);
@@ -863,4 +840,37 @@ void initMatrix() {
   view_sub2 = lookAt(eyePoint2, eyePoint2 + eyeDirection2, up);
   projection_sub2 = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
                                 0.01f, farPlane);
+}
+
+void initShader() {
+  // mesh
+  shaderPool = buildShader("./shader/vsPool.glsl", "./shader/fsPool.glsl");
+  glUseProgram(shaderPool);
+}
+
+GLuint createTexture(GLuint texUnit, string imgDir, FREE_IMAGE_FORMAT imgType) {
+  glActiveTexture(GL_TEXTURE0 + texUnit);
+
+  FIBITMAP *texImage =
+      FreeImage_ConvertTo24Bits(FreeImage_Load(imgType, imgDir.c_str()));
+
+  GLuint tboTex;
+  glGenTextures(1, &tboTex);
+  glBindTexture(GL_TEXTURE_2D, tboTex);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FreeImage_GetWidth(texImage),
+               FreeImage_GetHeight(texImage), 0, GL_BGR, GL_UNSIGNED_BYTE,
+               (void *)FreeImage_GetBits(texImage));
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  // release
+  FreeImage_Unload(texImage);
+
+  return tboTex;
+}
+
+void initTexture() {
+  // texture for pool
+  tboPoolBase = createTexture(10, "./image/stone.png", FIF_PNG);
+  glActiveTexture(GL_TEXTURE0 + 10);
+  uniPoolTexBase = myGetUniformLocation(shaderPool, "texBase");
 }
