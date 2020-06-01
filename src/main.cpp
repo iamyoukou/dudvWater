@@ -98,10 +98,9 @@ GLuint vao_skybox, vao_water, vao_subscreen1, vao_subscreen2;
 GLuint fbo_subscreen1, fbo_subscreen2;
 GLint uniform_model_skybox, uniform_view_skybox, uniform_projection_skybox;
 GLint uniPoolM, uniPoolV, uniPoolP;
-GLint uniform_model_water, uniform_view_water, uniform_projection_water;
-GLint uniform_lightColor, uniform_lightPosition, uniform_lightPower,
-    uniform_lightDirection;
-GLint uniform_diffuseColor, uniform_ambientColor, uniform_specularColor;
+GLint uniWaterM, uniWaterV, uniWaterP;
+GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
+GLint uniDiffuse, uniAmbient, uniSpecular;
 GLint uniPoolTexBase, uniform_tex_subscreen1, uniform_tex_subscreen2;
 GLint uniform_tex_refraction, uniform_tex_reflection, uniform_tex_dudv,
     uniform_tex_normal;
@@ -126,6 +125,7 @@ void initOther();
 void initShader();
 void initTexture();
 void initMatrix();
+void initUniform();
 void initSkybox();
 void initPool();
 void initWater();
@@ -144,6 +144,7 @@ int main(int argc, char **argv) {
   initShader();
   initTexture();
   initMatrix();
+  initUniform();
 
   // initSkybox();
   initPool();
@@ -228,6 +229,7 @@ int main(int argc, char **argv) {
     glBindVertexArray(pool.vao);
     glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
 
+    // refresh frame
     glfwSwapBuffers(window);
 
     // if (saveTrigger) {
@@ -492,36 +494,6 @@ void initPool() {
   // mesh
   pool = loadObj("./mesh/pool.obj");
   initMesh(pool);
-
-  uniPoolM = myGetUniformLocation(shaderPool, "M");
-  uniPoolV = myGetUniformLocation(shaderPool, "V");
-  uniPoolP = myGetUniformLocation(shaderPool, "P");
-
-  glUniformMatrix4fv(uniPoolM, 1, GL_FALSE, value_ptr(mainM));
-  glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(mainV));
-  glUniformMatrix4fv(uniPoolP, 1, GL_FALSE, value_ptr(mainP));
-
-  // light
-  uniform_lightColor = myGetUniformLocation(shaderPool, "lightColor");
-  glUniform3fv(uniform_lightColor, 1, value_ptr(lightColor));
-
-  uniform_lightPosition = myGetUniformLocation(shaderPool, "lightPosition");
-  glUniform3fv(uniform_lightPosition, 1, value_ptr(lightPosition));
-
-  uniform_lightPower = myGetUniformLocation(shaderPool, "lightPower");
-  glUniform1f(uniform_lightPower, lightPower);
-
-  uniform_diffuseColor = myGetUniformLocation(shaderPool, "diffuseColor");
-  glUniform3fv(uniform_diffuseColor, 1, value_ptr(materialDiffuse));
-
-  uniform_ambientColor = myGetUniformLocation(shaderPool, "ambientColor");
-  glUniform3fv(uniform_ambientColor, 1, value_ptr(materialAmbient));
-
-  uniform_specularColor = myGetUniformLocation(shaderPool, "specularColor");
-  glUniform3fv(uniform_specularColor, 1, value_ptr(materialSpecular));
-
-  glBindVertexArray(0);
-  glUseProgram(0);
 }
 
 // void initWater() {
@@ -558,14 +530,14 @@ void initPool() {
 //                         (GLvoid *)(sizeof(GLfloat) * 6 * 3));
 //   glEnableVertexAttribArray(1);
 //
-//   uniform_model_water = myGetUniformLocation(program_water, "model_water");
-//   uniform_view_water = myGetUniformLocation(program_water, "view_water");
-//   uniform_projection_water =
+//   uniWaterM = myGetUniformLocation(program_water, "model_water");
+//   uniWaterV = myGetUniformLocation(program_water, "view_water");
+//   uniWaterP =
 //       myGetUniformLocation(program_water, "projection_water");
 //
-//   glUniformMatrix4fv(uniform_model_water, 1, GL_FALSE,
-//   value_ptr(mainM)); glUniformMatrix4fv(uniform_view_water, 1, GL_FALSE,
-//   value_ptr(mainV)); glUniformMatrix4fv(uniform_projection_water, 1,
+//   glUniformMatrix4fv(uniWaterM, 1, GL_FALSE,
+//   value_ptr(mainM)); glUniformMatrix4fv(uniWaterV, 1, GL_FALSE,
+//   value_ptr(mainV)); glUniformMatrix4fv(uniWaterP, 1,
 //   GL_FALSE,
 //                      value_ptr(mainP));
 //
@@ -759,8 +731,8 @@ void drawSkybox(mat4 &M, mat4 &V, mat4 &P) {
 void drawWater(mat4 &M, mat4 &V, mat4 &P) {
   glUseProgram(program_water);
   glBindVertexArray(vao_water);
-  glUniformMatrix4fv(uniform_view_water, 1, GL_FALSE, value_ptr(V));
-  glUniformMatrix4fv(uniform_projection_water, 1, GL_FALSE, value_ptr(P));
+  glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(V));
+  glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(P));
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
@@ -829,12 +801,14 @@ void initOther() {
 }
 
 void initMatrix() {
+  // matrix for main window
   mainM = translate(mat4(1.f), vec3(0.f, 0.f, 0.f));
   oriMainM = mainM;
   mainV = lookAt(eyePoint, eyePoint + eyeDirection, up);
   mainP = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT, 0.01f,
                       farPlane);
 
+  // matrix for sub window
   model_sub2 = mainM;
   ori_model_sub2 = mainM;
   view_sub2 = lookAt(eyePoint2, eyePoint2 + eyeDirection2, up);
@@ -872,5 +846,36 @@ void initTexture() {
   // texture for pool
   tboPoolBase = createTexture(10, "./image/stone.png", FIF_PNG);
   glActiveTexture(GL_TEXTURE0 + 10);
+}
+
+void initUniform() {
+  /* Pool */
+  glUseProgram(shaderPool);
+
+  // texture
   uniPoolTexBase = myGetUniformLocation(shaderPool, "texBase");
+
+  // matrix
+  uniPoolM = myGetUniformLocation(shaderPool, "M");
+  uniPoolV = myGetUniformLocation(shaderPool, "V");
+  uniPoolP = myGetUniformLocation(shaderPool, "P");
+
+  glUniformMatrix4fv(uniPoolM, 1, GL_FALSE, value_ptr(mainM));
+  glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(mainV));
+  glUniformMatrix4fv(uniPoolP, 1, GL_FALSE, value_ptr(mainP));
+
+  // light
+  uniLightColor = myGetUniformLocation(shaderPool, "lightColor");
+  uniLightPos = myGetUniformLocation(shaderPool, "lightPosition");
+  uniLightPower = myGetUniformLocation(shaderPool, "lightPower");
+  uniDiffuse = myGetUniformLocation(shaderPool, "diffuseColor");
+  uniAmbient = myGetUniformLocation(shaderPool, "ambientColor");
+  uniSpecular = myGetUniformLocation(shaderPool, "specularColor");
+
+  glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
+  glUniform3fv(uniLightPos, 1, value_ptr(lightPosition));
+  glUniform1f(uniLightPower, lightPower);
+  glUniform3fv(uniDiffuse, 1, value_ptr(materialDiffuse));
+  glUniform3fv(uniAmbient, 1, value_ptr(materialAmbient));
+  glUniform3fv(uniSpecular, 1, value_ptr(materialSpecular));
 }
