@@ -74,17 +74,17 @@ GLfloat vtxsWater[] = {
     1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
 GLuint vboSkybox, tboSkybox;
-GLuint tboSubscreen1, vbo_subscreen1, tboSubscreen2, vbo_subscreen2;
+GLuint tboRefract, tboReflect;
 GLuint vboWater;
 GLuint tboWaterDudv, tboWaterNormal;
 GLuint vaoSkybox, vaoWater;
-GLuint fboSubscreen1, fboSubscreen2;
+GLuint fboRefract, fboReflect;
 GLint uniSkyboxM, uniSkyboxV, uniSkyboxP;
 GLint uniPoolM, uniPoolV, uniPoolP;
 GLint uniWaterM, uniWaterV, uniWaterP;
 GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
 GLint uniDiffuse, uniAmbient, uniSpecular;
-GLint uniPoolTexBase, uniform_tex_subscreen1;
+GLint uniPoolTexBase;
 GLint uniTexRefract, uniTexReflect, uniTexDudv, uniTexNormal;
 GLint uniDudvMove;
 GLint uniCamCoord;
@@ -106,8 +106,8 @@ void initMatrix();
 void initUniform();
 void initSkybox();
 void initMesh();
-void initSubscreen1();
-void initSubscreen2();
+void initRefract();
+void initReflect();
 void drawMesh();
 void drawWater();
 void drawSkybox();
@@ -123,8 +123,8 @@ int main(int argc, char **argv) {
 
   initSkybox();
   initMesh();
-  initSubscreen1();
-  initSubscreen2();
+  initRefract();
+  initReflect();
 
   // a rough way to solve cursor position initialization problem
   // must call glfwPollEvents once to activate glfwSetCursorPos
@@ -141,8 +141,8 @@ int main(int argc, char **argv) {
     // view control
     computeMatricesFromInputs();
 
-    /* render to fboSubscreen1 */
-    glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen1);
+    /* render to refraction texture */
+    glBindFramebuffer(GL_FRAMEBUFFER, fboRefract);
 
     // clipping
     glEnable(GL_CLIP_DISTANCE0);
@@ -157,8 +157,8 @@ int main(int argc, char **argv) {
     drawSkybox();
     drawMesh();
 
-    /* render to fboSubscreen2 */
-    glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen2);
+    /* render to reflection texture */
+    glBindFramebuffer(GL_FRAMEBUFFER, fboReflect);
 
     // clipping
     glDisable(GL_CLIP_DISTANCE0);
@@ -408,14 +408,14 @@ void initMesh() {
   glEnableVertexAttribArray(1);
 }
 
-void initSubscreen1() {
+void initRefract() {
   // framebuffer object
-  glGenFramebuffers(1, &fboSubscreen1);
-  glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen1);
+  glGenFramebuffers(1, &fboRefract);
+  glBindFramebuffer(GL_FRAMEBUFFER, fboRefract);
 
   glActiveTexture(GL_TEXTURE0 + 2);
-  glGenTextures(1, &tboSubscreen1);
-  glBindTexture(GL_TEXTURE_2D, tboSubscreen1);
+  glGenTextures(1, &tboRefract);
+  glBindTexture(GL_TEXTURE_2D, tboRefract);
 
   // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
@@ -423,18 +423,18 @@ void initSubscreen1() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tboSubscreen1, 0);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tboRefract, 0);
   glDrawBuffer(GL_COLOR_ATTACHMENT1);
 }
 
-void initSubscreen2() {
+void initReflect() {
   // framebuffer object
-  glGenFramebuffers(1, &fboSubscreen2);
-  glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen2);
+  glGenFramebuffers(1, &fboReflect);
+  glBindFramebuffer(GL_FRAMEBUFFER, fboReflect);
 
   glActiveTexture(GL_TEXTURE0 + 3);
-  glGenTextures(1, &tboSubscreen2);
-  glBindTexture(GL_TEXTURE_2D, tboSubscreen2);
+  glGenTextures(1, &tboReflect);
+  glBindTexture(GL_TEXTURE_2D, tboReflect);
 
   // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
@@ -442,7 +442,7 @@ void initSubscreen2() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, tboSubscreen2, 0);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, tboReflect, 0);
   glDrawBuffer(GL_COLOR_ATTACHMENT2);
 }
 

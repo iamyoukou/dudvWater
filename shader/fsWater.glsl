@@ -40,8 +40,8 @@ void main(){
     texCoordRefract += distortion;
     texCoordRefract = clamp(texCoordRefract, 0.001, 0.999);
 
-    vec4 color_reflection = texture(texReflect, texCoordReflect);
-    vec4 color_refraction = texture(texRefract, texCoordRefract);
+    vec4 colorReflection = texture(texReflect, texCoordReflect);
+    vec4 colorRefraction = texture(texRefract, texCoordRefract);
 
     vec4 normalMapColor = texture(texNormal, distortion);
     vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b*2.0-1.0, normalMapColor.g*2.0-1.0);
@@ -55,8 +55,6 @@ void main(){
     specular = pow(specular, shineDamper);
     vec3 specularHighlight = lightColor * specular * reflectivity;
 
-    outputColor = mix(color_reflection, color_refraction, refractiveFactor);
+    outputColor = mix(colorReflection, colorRefraction, refractiveFactor);
     outputColor = mix(outputColor, vec4(0.0, 0.0, 0.1, 1.0) + vec4(specularHighlight, 0), 0.1);
-    // outputColor = color_reflection;
-    // outputColor = color_refraction;
 }
