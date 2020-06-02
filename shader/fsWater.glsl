@@ -5,12 +5,12 @@ in vec2 dudv_coord;
 in vec3 toCamera;
 in vec3 fromLightVector;
 
-uniform sampler2D texReflection;
-uniform sampler2D texRefraction;
+uniform sampler2D texReflect;
+uniform sampler2D texRefract;
 uniform sampler2D texDudv;
 uniform sampler2D texNormal;
 uniform sampler2D tex_depth;
-uniform float dudv_move;
+uniform float dudvMove;
 uniform vec3 lightColor;
 
 out vec4 outputColor;
@@ -27,9 +27,9 @@ void main(){
     vec2 tex_coord_reflection = vec2(ndc.x, -ndc.y);
 
     // Without alpha, distortion will be too huge
-    vec2 distortion1 = texture(texDudv, vec2(dudv_coord.x + dudv_move, dudv_coord.y)).rg * 2.0 - 1.0;
+    vec2 distortion1 = texture(texDudv, vec2(dudv_coord.x + dudvMove, dudv_coord.y)).rg * 2.0 - 1.0;
     distortion1 *= alpha;
-    vec2 distortion2 = texture(texDudv, vec2(-dudv_coord.x, dudv_coord.y + dudv_move)).rg * 2.0 - 1.0;
+    vec2 distortion2 = texture(texDudv, vec2(-dudv_coord.x, dudv_coord.y + dudvMove)).rg * 2.0 - 1.0;
     distortion2 *= alpha;
     vec2 distortion = distortion1 + distortion2;
 
@@ -40,8 +40,8 @@ void main(){
     tex_coord_refraction += distortion;
     tex_coord_refraction = clamp(tex_coord_refraction, 0.001, 0.999);
 
-    vec4 color_reflection = texture(texReflection, tex_coord_reflection);
-    vec4 color_refraction = texture(texRefraction, tex_coord_refraction);
+    vec4 color_reflection = texture(texReflect, tex_coord_reflection);
+    vec4 color_refraction = texture(texRefract, tex_coord_refraction);
 
     vec4 normalMapColor = texture(texNormal, distortion);
     vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b*2.0-1.0, normalMapColor.g*2.0-1.0);

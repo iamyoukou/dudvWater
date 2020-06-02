@@ -12,7 +12,7 @@ float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
 float farPlane = 2000.f;
-float dudv_move = 0.f;
+float dudvMove = 0.f;
 
 vec3 eyePoint = vec3(5.7f, 9.7f, -5.9f);
 vec3 eyeDirection =
@@ -89,10 +89,10 @@ GLfloat vertices_subscreen2[] = {
     // texture coords
     0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
 
-GLuint vboSkybox, tboSkybox, obj_pool_tex, obj_subscreen1_tex, vbo_subscreen1,
+GLuint vboSkybox, tboSkybox, obj_subscreen1_tex, vbo_subscreen1,
     obj_subscreen2_tex, vbo_subscreen2;
 GLuint vboWater;
-GLuint obj_reflection_tex, obj_refraction_tex, tboWaterDudv, tboWaterNormal;
+GLuint tboWaterDudv, tboWaterNormal;
 GLuint obj_depth_tex;
 GLuint vaoSkybox, vaoWater, vao_subscreen1, vao_subscreen2;
 GLuint fbo_subscreen1, fbo_subscreen2;
@@ -102,10 +102,10 @@ GLint uniWaterM, uniWaterV, uniWaterP;
 GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
 GLint uniDiffuse, uniAmbient, uniSpecular;
 GLint uniPoolTexBase, uniform_tex_subscreen1, uniform_tex_subscreen2;
-GLint uniTexRefraction, uniTexReflection, uniTexDudv, uniTexNormal;
+GLint uniTexRefract, uniTexReflect, uniTexDudv, uniTexNormal;
 GLint uniform_tex_depth;
-GLint uniform_move;
-GLint uniform_camera_coord;
+GLint uniDudvMove;
+GLint uniCamCoord;
 GLint uniWaterLightColor, uniWaterLightPos;
 mat4 meshM, meshV, meshP;
 mat4 ori_model_sub2, model_sub2, view_sub2, projection_sub2;
@@ -127,7 +127,6 @@ void initMatrix();
 void initUniform();
 void initSkybox();
 void initMesh();
-void initWater();
 void initSubscreen1();
 void initSubscreen2();
 void drawSkybox(mat4 &, mat4 &, mat4 &);
@@ -147,7 +146,6 @@ int main(int argc, char **argv) {
 
   initSkybox();
   initMesh();
-  initWater();
   // initSubscreen1();
   // initSubscreen2();
 
@@ -166,17 +164,7 @@ int main(int argc, char **argv) {
     // view control
     computeMatricesFromInputs();
 
-    // glUseProgram(shaderWater);
-    // uniform_move = myGetUniformLocation(shaderWater, "dudv_move");
-    // dudv_move += 0.0005f; // speed
-    // dudv_move = fmod(dudv_move, 1.0f);
-    // glUniform1f(uniform_move, dudv_move);
-
-    // uniform_camera_coord = myGetUniformLocation(shaderWater,
-    // "camera_coord"); glUniform3fv(uniform_camera_coord, 1,
-    // value_ptr(eyePoint)); glUseProgram(0);
-
-    // render to fbo_subscreen1
+    /* render to fbo_subscreen1 */
     // glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen1);
     // glClearColor(171 / 256.f, 178 / 256.f, 191 / 256.f, 1.0f);
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -194,7 +182,7 @@ int main(int argc, char **argv) {
     // drawSkybox(model_skybox, meshV, meshP);
     // drawModels(meshM, meshV, meshP);
 
-    // render to fbo_subscreen2
+    /* render to fbo_subscreen2 */
     // glDisable(GL_CLIP_DISTANCE0);
     // glEnable(GL_CLIP_DISTANCE1);
     //
@@ -212,8 +200,8 @@ int main(int argc, char **argv) {
     // drawSkybox(model_skybox, view_sub2, projection_sub2);
     // drawModels(model_sub2, view_sub2, projection_sub2);
 
-    // render to main screen
-    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    /* render to main screen */
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // glDisable(GL_CLIP_DISTANCE0);
     // glDisable(GL_CLIP_DISTANCE1);
     // drawSkybox(model_skybox, meshV, meshP);
@@ -231,6 +219,19 @@ int main(int argc, char **argv) {
     glUniform1i(uniPoolTexBase, 10); // change base color
     glBindVertexArray(pool.vao);
     glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
+
+    // draw water
+    glUseProgram(shaderWater);
+    uniDudvMove = myGetUniformLocation(shaderWater, "dudvMove");
+    dudvMove += 0.0005f; // speed
+    dudvMove = fmod(dudvMove, 1.0f);
+    glUniform1f(uniDudvMove, dudvMove);
+
+    uniCamCoord = myGetUniformLocation(shaderWater, "camCoord");
+    glUniform3fv(uniCamCoord, 1, value_ptr(eyePoint));
+
+    glBindVertexArray(vaoWater);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // refresh frame
     glfwSwapBuffers(window);
@@ -348,12 +349,17 @@ void computeMatricesFromInputs() {
   skyboxM[3][2] = oriSkyboxM[2][3] + eyePoint.z;
   glUniformMatrix4fv(uniSkyboxM, 1, GL_FALSE, value_ptr(skyboxM));
 
-  // update for mesh
+  // update for pool
   glUseProgram(shaderPool);
   meshV = newV;
   meshP = newP;
   glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(meshV));
   glUniformMatrix4fv(uniPoolP, 1, GL_FALSE, value_ptr(meshP));
+
+  // update for water
+  glUseProgram(shaderWater);
+  glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(meshV));
+  glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(meshP));
 
   // For the next frame, the "last time" will be "now"
   lastTime = currentTime;
@@ -477,10 +483,8 @@ void initMesh() {
   // pool
   pool = loadObj("./mesh/pool.obj");
   createMesh(pool);
-}
 
-void initWater() {
-  // water mesh
+  // water
   glGenVertexArrays(1, &vaoWater);
   glBindVertexArray(vaoWater);
 
@@ -642,17 +646,17 @@ void drawWater(mat4 &M, mat4 &V, mat4 &P) {
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void drawSubscreen1() {
-  glUseProgram(program_subscreen1);
-  glBindVertexArray(vao_subscreen1);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
-}
-
-void drawSubscreen2() {
-  glUseProgram(program_subscreen2);
-  glBindVertexArray(vao_subscreen2);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
-}
+// void drawSubscreen1() {
+//   glUseProgram(program_subscreen1);
+//   glBindVertexArray(vao_subscreen1);
+//   glDrawArrays(GL_TRIANGLES, 0, 6);
+// }
+//
+// void drawSubscreen2() {
+//   glUseProgram(program_subscreen2);
+//   glBindVertexArray(vao_subscreen2);
+//   glDrawArrays(GL_TRIANGLES, 0, 6);
+// }
 
 void initGL() {
   // Initialise GLFW
@@ -699,6 +703,9 @@ void initGL() {
 
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST); // must enable depth test!!
+
+  glDisable(GL_CLIP_DISTANCE0);
+  glDisable(GL_CLIP_DISTANCE1);
 }
 
 void initOther() {
@@ -837,15 +844,15 @@ void initUniform() {
   glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(meshP));
 
   // texture
-  uniTexReflection = myGetUniformLocation(shaderWater, "texReflection");
-  uniTexRefraction = myGetUniformLocation(shaderWater, "texRefraction");
+  uniTexReflect = myGetUniformLocation(shaderWater, "texReflect");
+  uniTexRefract = myGetUniformLocation(shaderWater, "texRefract");
   uniTexDudv = myGetUniformLocation(shaderWater, "texDudv");
   uniTexNormal = myGetUniformLocation(shaderWater, "texNormal");
 
   glUniform1i(uniTexDudv, 11);
   glUniform1i(uniTexNormal, 12);
-  glUniform1i(uniTexReflection, 3);
-  glUniform1i(uniTexRefraction, 2);
+  glUniform1i(uniTexReflect, 3);
+  glUniform1i(uniTexRefract, 2);
 
   // light
   uniWaterLightColor = myGetUniformLocation(shaderWater, "lightColor");
