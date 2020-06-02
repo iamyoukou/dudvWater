@@ -5,13 +5,13 @@ in vec2 dudv_coord;
 in vec3 toCamera;
 in vec3 fromLightVector;
 
-uniform sampler2D tex_reflection;
-uniform sampler2D tex_refraction;
-uniform sampler2D tex_dudv;
-uniform sampler2D tex_normal;
+uniform sampler2D texReflection;
+uniform sampler2D texRefraction;
+uniform sampler2D texDudv;
+uniform sampler2D texNormal;
 uniform sampler2D tex_depth;
 uniform float dudv_move;
-uniform vec3 lightColor_water;
+uniform vec3 lightColor;
 
 out vec4 outputColor;
 
@@ -27,9 +27,9 @@ void main(){
     vec2 tex_coord_reflection = vec2(ndc.x, -ndc.y);
 
     // Without alpha, distortion will be too huge
-    vec2 distortion1 = texture(tex_dudv, vec2(dudv_coord.x + dudv_move, dudv_coord.y)).rg * 2.0 - 1.0;
+    vec2 distortion1 = texture(texDudv, vec2(dudv_coord.x + dudv_move, dudv_coord.y)).rg * 2.0 - 1.0;
     distortion1 *= alpha;
-    vec2 distortion2 = texture(tex_dudv, vec2(-dudv_coord.x, dudv_coord.y + dudv_move)).rg * 2.0 - 1.0;
+    vec2 distortion2 = texture(texDudv, vec2(-dudv_coord.x, dudv_coord.y + dudv_move)).rg * 2.0 - 1.0;
     distortion2 *= alpha;
     vec2 distortion = distortion1 + distortion2;
 
@@ -40,10 +40,10 @@ void main(){
     tex_coord_refraction += distortion;
     tex_coord_refraction = clamp(tex_coord_refraction, 0.001, 0.999);
 
-    vec4 color_reflection = texture(tex_reflection, tex_coord_reflection);
-    vec4 color_refraction = texture(tex_refraction, tex_coord_refraction);
+    vec4 color_reflection = texture(texReflection, tex_coord_reflection);
+    vec4 color_refraction = texture(texRefraction, tex_coord_refraction);
 
-    vec4 normalMapColor = texture(tex_normal, distortion);
+    vec4 normalMapColor = texture(texNormal, distortion);
     vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b*2.0-1.0, normalMapColor.g*2.0-1.0);
 
     vec3 view_vector = normalize(toCamera);
@@ -53,7 +53,7 @@ void main(){
     vec3 reflectedLight = reflect(normalize(fromLightVector), normal);
     float specular = max(dot(reflectedLight, view_vector), 0.0);
     specular = pow(specular, shineDamper);
-    vec3 specularHighlight = lightColor_water * specular * reflectivity;
+    vec3 specularHighlight = lightColor * specular * reflectivity;
 
     outputColor = mix(color_reflection, color_refraction, refractive_factor);
     outputColor = mix(outputColor, vec4(0.0, 0.0, 0.1, 1.0) + vec4(specularHighlight, 0), 0.1);

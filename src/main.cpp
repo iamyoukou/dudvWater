@@ -65,7 +65,7 @@ GLfloat vtxsSkybox[] = {
 
 const float WATER_SIZE = 3.8f;
 const float WATER_Y = 2.2f;
-GLfloat waterVertices[] = {
+GLfloat vtxsWater[] = {
     // coords
     -WATER_SIZE, WATER_Y, -WATER_SIZE, -WATER_SIZE, WATER_Y, WATER_SIZE,
     WATER_SIZE, WATER_Y, WATER_SIZE, WATER_SIZE, WATER_Y, WATER_SIZE,
@@ -91,10 +91,10 @@ GLfloat vertices_subscreen2[] = {
 
 GLuint vboSkybox, tboSkybox, obj_pool_tex, obj_subscreen1_tex, vbo_subscreen1,
     obj_subscreen2_tex, vbo_subscreen2;
-GLuint vbo_water;
-GLuint obj_reflection_tex, obj_refraction_tex, obj_dudv_tex, obj_normal_tex;
+GLuint vboWater;
+GLuint obj_reflection_tex, obj_refraction_tex, tboWaterDudv, tboWaterNormal;
 GLuint obj_depth_tex;
-GLuint vaoSkybox, vao_water, vao_subscreen1, vao_subscreen2;
+GLuint vaoSkybox, vaoWater, vao_subscreen1, vao_subscreen2;
 GLuint fbo_subscreen1, fbo_subscreen2;
 GLint uniSkyboxM, uniSkyboxV, uniSkyboxP;
 GLint uniPoolM, uniPoolV, uniPoolP;
@@ -102,16 +102,15 @@ GLint uniWaterM, uniWaterV, uniWaterP;
 GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
 GLint uniDiffuse, uniAmbient, uniSpecular;
 GLint uniPoolTexBase, uniform_tex_subscreen1, uniform_tex_subscreen2;
-GLint uniform_tex_refraction, uniform_tex_reflection, uniform_tex_dudv,
-    uniform_tex_normal;
+GLint uniTexRefraction, uniTexReflection, uniTexDudv, uniTexNormal;
 GLint uniform_tex_depth;
 GLint uniform_move;
 GLint uniform_camera_coord;
-GLint uniform_lightColor_water, uniform_lightPosition_water;
+GLint uniWaterLightColor, uniWaterLightPos;
 mat4 meshM, meshV, meshP;
 mat4 ori_model_sub2, model_sub2, view_sub2, projection_sub2;
 mat4 skyboxM, skyboxV, skyboxP, oriSkyboxM;
-GLuint shaderSkybox, shaderPool, program_water, program_subscreen1,
+GLuint shaderSkybox, shaderPool, shaderWater, program_subscreen1,
     program_subscreen2;
 GLuint tboPoolBase;
 
@@ -148,7 +147,7 @@ int main(int argc, char **argv) {
 
   initSkybox();
   initMesh();
-  // initWater();
+  initWater();
   // initSubscreen1();
   // initSubscreen2();
 
@@ -167,13 +166,13 @@ int main(int argc, char **argv) {
     // view control
     computeMatricesFromInputs();
 
-    // glUseProgram(program_water);
-    // uniform_move = myGetUniformLocation(program_water, "dudv_move");
+    // glUseProgram(shaderWater);
+    // uniform_move = myGetUniformLocation(shaderWater, "dudv_move");
     // dudv_move += 0.0005f; // speed
     // dudv_move = fmod(dudv_move, 1.0f);
     // glUniform1f(uniform_move, dudv_move);
 
-    // uniform_camera_coord = myGetUniformLocation(program_water,
+    // uniform_camera_coord = myGetUniformLocation(shaderWater,
     // "camera_coord"); glUniform3fv(uniform_camera_coord, 1,
     // value_ptr(eyePoint)); glUseProgram(0);
 
@@ -480,95 +479,21 @@ void initMesh() {
   createMesh(pool);
 }
 
-// void initWater() {
-//   // shaders
-//   GLuint vs, fs;
-//   GLint link_ok;
-//
-//   vs = create_shader("./shader/vsWater.glsl", GL_VERTEX_SHADER);
-//   fs = create_shader("./shader/fsWater.glsl", GL_FRAGMENT_SHADER);
-//
-//   program_water = glCreateProgram();
-//   glAttachShader(program_water, vs);
-//   glAttachShader(program_water, fs);
-//
-//   glLinkProgram(program_water);
-//   glGetProgramiv(program_water, GL_LINK_STATUS, &link_ok);
-//
-//   if (link_ok == GL_FALSE) {
-//     std::cout << "Link failed." << std::endl;
-//   }
-//
-//   glUseProgram(program_water);
-//   glGenVertexArrays(1, &vao_water);
-//   glBindVertexArray(vao_water);
-//
-//   glGenBuffers(1, &vbo_water);
-//   glBindBuffer(GL_ARRAY_BUFFER, vbo_water);
-//   glBufferData(GL_ARRAY_BUFFER, sizeof(waterVertices), waterVertices,
-//                GL_STATIC_DRAW);
-//   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-//   glEnableVertexAttribArray(0);
-//
-//   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-//                         (GLvoid *)(sizeof(GLfloat) * 6 * 3));
-//   glEnableVertexAttribArray(1);
-//
-//   uniWaterM = myGetUniformLocation(program_water, "model_water");
-//   uniWaterV = myGetUniformLocation(program_water, "view_water");
-//   uniWaterP = myGetUniformLocation(program_water, "projection_water");
-//
-//   glUniformMatrix4fv(uniWaterM, 1, GL_FALSE, value_ptr(meshM));
-//   glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(meshV));
-//   glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(meshP));
-//
-//   // dudv texture
-//   FIBITMAP *dudv_image = FreeImage_Load(FIF_PNG, "./image/dudv2.png");
-//
-//   glActiveTexture(GL_TEXTURE4);
-//   glGenTextures(1, &obj_dudv_tex);
-//   glBindTexture(GL_TEXTURE_2D, obj_dudv_tex);
-//
-//   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FreeImage_GetWidth(dudv_image),
-//                FreeImage_GetHeight(dudv_image), 0, GL_BGR, GL_UNSIGNED_BYTE,
-//                (void *)FreeImage_GetBits(dudv_image));
-//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//
-//   // normal map texture
-//   FIBITMAP *normal_image = FreeImage_Load(FIF_PNG, "./image/normalMap2.png");
-//
-//   glActiveTexture(GL_TEXTURE5);
-//   glGenTextures(1, &obj_normal_tex);
-//   glBindTexture(GL_TEXTURE_2D, obj_normal_tex);
-//
-//   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FreeImage_GetWidth(normal_image),
-//                FreeImage_GetHeight(normal_image), 0, GL_BGR,
-//                GL_UNSIGNED_BYTE, (void *)FreeImage_GetBits(normal_image));
-//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//
-//   uniform_tex_reflection =
-//       myGetUniformLocation(program_water, "tex_reflection");
-//   uniform_tex_refraction =
-//       myGetUniformLocation(program_water, "tex_refraction");
-//   uniform_tex_dudv = myGetUniformLocation(program_water, "tex_dudv");
-//   uniform_tex_normal = myGetUniformLocation(program_water, "tex_normal");
-//
-//   glUniform1i(uniform_tex_dudv, 4);   // GL_TEXTURE4
-//   glUniform1i(uniform_tex_normal, 5); // GL_TEXTURE5
-//   glUniform1i(uniform_tex_reflection, 3);
-//   glUniform1i(uniform_tex_refraction, 2);
-//
-//   // light
-//   uniform_lightColor_water =
-//       myGetUniformLocation(program_water, "lightColor_water");
-//   uniform_lightPosition_water =
-//       myGetUniformLocation(program_water, "lightPosition_water");
-//   glUniform3fv(uniform_lightColor_water, 1, value_ptr(lightColor));
-//   glUniform3fv(uniform_lightPosition_water, 1, value_ptr(lightPosition));
-//
-//   glBindVertexArray(0);
-//   glUseProgram(0);
-// }
+void initWater() {
+  // water mesh
+  glGenVertexArrays(1, &vaoWater);
+  glBindVertexArray(vaoWater);
+
+  glGenBuffers(1, &vboWater);
+  glBindBuffer(GL_ARRAY_BUFFER, vboWater);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vtxsWater), vtxsWater, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(0);
+
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
+                        (GLvoid *)(sizeof(GLfloat) * 6 * 3));
+  glEnableVertexAttribArray(1);
+}
 
 // void initSubscreen1() {
 //   // shaders
@@ -710,8 +635,8 @@ void initMesh() {
 // }
 
 void drawWater(mat4 &M, mat4 &V, mat4 &P) {
-  glUseProgram(program_water);
-  glBindVertexArray(vao_water);
+  glUseProgram(shaderWater);
+  glBindVertexArray(vaoWater);
   glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(V));
   glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(P));
   glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -817,6 +742,9 @@ void initShader() {
   // skybox
   shaderSkybox =
       buildShader("./shader/vsSkybox.glsl", "./shader/fsSkybox.glsl");
+
+  // water
+  shaderWater = buildShader("./shader/vsWater.glsl", "./shader/fsWater.glsl");
 }
 
 GLuint createTexture(GLuint texUnit, string imgDir, FREE_IMAGE_FORMAT imgType) {
@@ -840,9 +768,17 @@ GLuint createTexture(GLuint texUnit, string imgDir, FREE_IMAGE_FORMAT imgType) {
 }
 
 void initTexture() {
-  // texture for pool
+  // pool base texture
   tboPoolBase = createTexture(10, "./image/stone.png", FIF_PNG);
   glActiveTexture(GL_TEXTURE0 + 10);
+
+  // water dudv map
+  tboWaterDudv = createTexture(11, "./image/dudv2.png", FIF_PNG);
+  glActiveTexture(GL_TEXTURE0 + 11);
+
+  // water normal map
+  tboWaterNormal = createTexture(12, "./image/normalMap2.png", FIF_PNG);
+  glActiveTexture(GL_TEXTURE0 + 12);
 }
 
 void initUniform() {
@@ -852,7 +788,7 @@ void initUniform() {
   // texture
   uniPoolTexBase = myGetUniformLocation(shaderPool, "texBase");
 
-  // matrix
+  // transform
   uniPoolM = myGetUniformLocation(shaderPool, "M");
   uniPoolV = myGetUniformLocation(shaderPool, "V");
   uniPoolP = myGetUniformLocation(shaderPool, "P");
@@ -879,7 +815,7 @@ void initUniform() {
   /* Skybox */
   glUseProgram(shaderSkybox);
 
-  // matrix
+  // transform
   uniSkyboxM = myGetUniformLocation(shaderSkybox, "M");
   uniSkyboxV = myGetUniformLocation(shaderSkybox, "V");
   uniSkyboxP = myGetUniformLocation(shaderSkybox, "P");
@@ -887,4 +823,33 @@ void initUniform() {
   glUniformMatrix4fv(uniSkyboxM, 1, GL_FALSE, value_ptr(meshM));
   glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(meshV));
   glUniformMatrix4fv(uniSkyboxP, 1, GL_FALSE, value_ptr(meshP));
+
+  /* Water */
+  glUseProgram(shaderWater);
+
+  // transform
+  uniWaterM = myGetUniformLocation(shaderWater, "M");
+  uniWaterV = myGetUniformLocation(shaderWater, "V");
+  uniWaterP = myGetUniformLocation(shaderWater, "P");
+
+  glUniformMatrix4fv(uniWaterM, 1, GL_FALSE, value_ptr(meshM));
+  glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(meshV));
+  glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(meshP));
+
+  // texture
+  uniTexReflection = myGetUniformLocation(shaderWater, "texReflection");
+  uniTexRefraction = myGetUniformLocation(shaderWater, "texRefraction");
+  uniTexDudv = myGetUniformLocation(shaderWater, "texDudv");
+  uniTexNormal = myGetUniformLocation(shaderWater, "texNormal");
+
+  glUniform1i(uniTexDudv, 11);
+  glUniform1i(uniTexNormal, 12);
+  glUniform1i(uniTexReflection, 3);
+  glUniform1i(uniTexRefraction, 2);
+
+  // light
+  uniWaterLightColor = myGetUniformLocation(shaderWater, "lightColor");
+  uniWaterLightPos = myGetUniformLocation(shaderWater, "lightPos");
+  glUniform3fv(uniWaterLightColor, 1, value_ptr(lightColor));
+  glUniform3fv(uniWaterLightPos, 1, value_ptr(lightPosition));
 }
