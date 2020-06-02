@@ -5,19 +5,19 @@ layout( location = 2 ) in vec3 normal;
 
 out vec3 fragColor;
 out vec2 uv;
-// out float gl_ClipDistance[2];
+out float gl_ClipDistance[2];
 
 uniform mat4 M, V, P;
 uniform vec3 lightColor, lightPosition;
 uniform vec3 diffuseColor, ambientColor, specularColor;
 uniform float lightPower;
-// uniform vec4 clipPlane0, clipPlane1;
+uniform vec4 clipPlane0, clipPlane1;
 
 void main(){
     //P plane
     gl_Position = P * V * M * vec4( vtxCoord, 1.0 );
-    // gl_ClipDistance[0] = -dot(M * vec4(vtxCoord, 1.0), clipPlane0);
-    // gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
+    gl_ClipDistance[0] = -dot(M * vec4(vtxCoord, 1.0), clipPlane0);
+    gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
 
     //V space
     vec3 vPosition_viewspace = ( V * M * vec4( vtxCoord, 1.0 ) ).xyz;

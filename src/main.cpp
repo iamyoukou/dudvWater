@@ -73,29 +73,30 @@ GLfloat vtxsWater[] = {
     // texture coords for dudv
     1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
-GLfloat vertices_subscreen1[] = {
-    // vertex coords
-    -0.1f, 0.3f, -1, -0.1f, 0.9f, -1, -0.9f, 0.9f, -1, -0.9f, 0.9f, -1, -0.9f,
-    0.3f, -1, -0.1f, 0.3f, -1,
+// GLfloat vertices_subscreen1[] = {
+//     // vertex coords
+//     -0.1f, 0.3f, -1, -0.1f, 0.9f, -1, -0.9f, 0.9f, -1, -0.9f, 0.9f, -1,
+//     -0.9f, 0.3f, -1, -0.1f, 0.3f, -1,
+//
+//     // texture coords
+//     1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+//
+// GLfloat vertices_subscreen2[] = {
+//     // vertex coords
+//     0.1f, 0.3f, -1, 0.9f, 0.3f, -1, 0.1f, 0.9f, -1, 0.1f, 0.9f, -1, 0.9f,
+//     0.3f, -1, 0.9f, 0.9f, -1,
+//
+//     // texture coords
+//     0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
 
-    // texture coords
-    1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
-
-GLfloat vertices_subscreen2[] = {
-    // vertex coords
-    0.1f, 0.3f, -1, 0.9f, 0.3f, -1, 0.1f, 0.9f, -1, 0.1f, 0.9f, -1, 0.9f, 0.3f,
-    -1, 0.9f, 0.9f, -1,
-
-    // texture coords
-    0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
-
-GLuint vboSkybox, tboSkybox, obj_subscreen1_tex, vbo_subscreen1,
-    obj_subscreen2_tex, vbo_subscreen2;
+GLuint vboSkybox, tboSkybox;
+// GLuint obj_subscreen1_tex, vbo_subscreen1, obj_subscreen2_tex,
+// vbo_subscreen2;
 GLuint vboWater;
 GLuint tboWaterDudv, tboWaterNormal;
-GLuint obj_depth_tex;
-GLuint vaoSkybox, vaoWater, vao_subscreen1, vao_subscreen2;
-GLuint fbo_subscreen1, fbo_subscreen2;
+GLuint vaoSkybox, vaoWater;
+// GLuint vao_subscreen1, vao_subscreen2;
+// GLuint fbo_subscreen1, fbo_subscreen2;
 GLint uniSkyboxM, uniSkyboxV, uniSkyboxP;
 GLint uniPoolM, uniPoolV, uniPoolP;
 GLint uniWaterM, uniWaterV, uniWaterP;
@@ -103,22 +104,20 @@ GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
 GLint uniDiffuse, uniAmbient, uniSpecular;
 GLint uniPoolTexBase, uniform_tex_subscreen1, uniform_tex_subscreen2;
 GLint uniTexRefract, uniTexReflect, uniTexDudv, uniTexNormal;
-GLint uniform_tex_depth;
 GLint uniDudvMove;
 GLint uniCamCoord;
 GLint uniWaterLightColor, uniWaterLightPos;
 mat4 meshM, meshV, meshP;
-mat4 ori_model_sub2, model_sub2, view_sub2, projection_sub2;
+// mat4 ori_model_sub2, model_sub2, view_sub2, projection_sub2;
 mat4 skyboxM, skyboxV, skyboxP, oriSkyboxM;
-GLuint shaderSkybox, shaderPool, shaderWater, program_subscreen1,
-    program_subscreen2;
+GLuint shaderSkybox, shaderPool, shaderWater;
+// GLuint program_subscreen1, program_subscreen2;
 GLuint tboPoolBase;
 
 Mesh pool;
 
 void computeMatricesFromInputs();
 void keyCallback(GLFWwindow *, int, int, int, int);
-GLuint loadCubemap(vector<string> &);
 void initGL();
 void initOther();
 void initShader();
@@ -127,13 +126,11 @@ void initMatrix();
 void initUniform();
 void initSkybox();
 void initMesh();
-void initSubscreen1();
-void initSubscreen2();
-void drawSkybox(mat4 &, mat4 &, mat4 &);
-void drawModels(mat4 &, mat4 &, mat4 &);
-void drawWater(mat4 &, mat4 &, mat4 &);
-void drawSubscreen1();
-void drawSubscreen2();
+// void initSubscreen1();
+// void initSubscreen2();
+// void drawModels(mat4 &, mat4 &, mat4 &);
+// void drawSubscreen1();
+// void drawSubscreen2();
 GLuint createTexture(GLuint, string, FREE_IMAGE_FORMAT);
 
 int main(int argc, char **argv) {
@@ -398,34 +395,6 @@ void keyCallback(GLFWwindow *keyWnd, int key, int scancode, int action,
   }
 }
 
-GLuint loadCubemap(vector<string> &faces) {
-  GLuint textureID;
-  glGenTextures(1, &textureID);
-  glActiveTexture(GL_TEXTURE0);
-
-  int width, height;
-  FIBITMAP *image;
-
-  glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-  for (GLuint i = 0; i < faces.size(); i++) {
-    image = FreeImage_Load(FIF_PNG, faces[i].c_str());
-    FreeImage_ConvertTo24Bits(image);
-    width = FreeImage_GetWidth(image);
-    height = FreeImage_GetHeight(image);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height,
-                 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-  }
-
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-  return textureID;
-}
-
 void initSkybox() {
   // texture
   glActiveTexture(GL_TEXTURE0);
@@ -629,23 +598,6 @@ void initMesh() {
 //   glUseProgram(0);
 // }
 
-// void drawSkybox(mat4 &M, mat4 &V, mat4 &P) {
-//   glUseProgram(shaderSkybox);
-//   glBindVertexArray(vao_skybox);
-//   glUniformMatrix4fv(uniSkyboxM, 1, GL_FALSE, value_ptr(M));
-//   glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(V));
-//   glUniformMatrix4fv(uniSkyboxP, 1, GL_FALSE, value_ptr(P));
-//   glDrawArrays(GL_TRIANGLES, 0, 36);
-// }
-
-void drawWater(mat4 &M, mat4 &V, mat4 &P) {
-  glUseProgram(shaderWater);
-  glBindVertexArray(vaoWater);
-  glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(V));
-  glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(P));
-  glDrawArrays(GL_TRIANGLES, 0, 6);
-}
-
 // void drawSubscreen1() {
 //   glUseProgram(program_subscreen1);
 //   glBindVertexArray(vao_subscreen1);
@@ -704,8 +656,8 @@ void initGL() {
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST); // must enable depth test!!
 
-  glDisable(GL_CLIP_DISTANCE0);
-  glDisable(GL_CLIP_DISTANCE1);
+  // glDisable(GL_CLIP_DISTANCE0);
+  // glDisable(GL_CLIP_DISTANCE1);
 }
 
 void initOther() {
