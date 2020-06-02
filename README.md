@@ -50,6 +50,18 @@ Therefore, distorting the water texture with this wavy pattern can produce a wav
 I guess the key is how to get a wavy pattern that is related to surface normals,
 not the difference between the original plane and the distorted one.
 
+# Problem
+
+Currently, this program renders the same scene `three` times per frame.
+One for the reflection frame buffer, one for the refraction frame buffer,
+and one for the main window.
+
+This may not be a problem for simple scenes.
+However, video games always have complex scenes,
+and rendering such scenes `three` times per frame is too expensive.
+
+I will try to fix this problem in the future.
+
 # Result
 
 The result of using the first derivative of normal is good, though.

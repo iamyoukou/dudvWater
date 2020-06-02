@@ -73,44 +73,25 @@ GLfloat vtxsWater[] = {
     // texture coords for dudv
     1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
-// GLfloat vertices_subscreen1[] = {
-//     // vertex coords
-//     -0.1f, 0.3f, -1, -0.1f, 0.9f, -1, -0.9f, 0.9f, -1, -0.9f, 0.9f, -1,
-//     -0.9f, 0.3f, -1, -0.1f, 0.3f, -1,
-//
-//     // texture coords
-//     1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
-//
-// GLfloat vertices_subscreen2[] = {
-//     // vertex coords
-//     0.1f, 0.3f, -1, 0.9f, 0.3f, -1, 0.1f, 0.9f, -1, 0.1f, 0.9f, -1, 0.9f,
-//     0.3f, -1, 0.9f, 0.9f, -1,
-//
-//     // texture coords
-//     0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
-
 GLuint vboSkybox, tboSkybox;
 GLuint tboSubscreen1, vbo_subscreen1, tboSubscreen2, vbo_subscreen2;
 GLuint vboWater;
 GLuint tboWaterDudv, tboWaterNormal;
 GLuint vaoSkybox, vaoWater;
-// GLuint vao_subscreen1, vao_subscreen2;
 GLuint fboSubscreen1, fboSubscreen2;
 GLint uniSkyboxM, uniSkyboxV, uniSkyboxP;
 GLint uniPoolM, uniPoolV, uniPoolP;
 GLint uniWaterM, uniWaterV, uniWaterP;
 GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
 GLint uniDiffuse, uniAmbient, uniSpecular;
-GLint uniPoolTexBase, uniform_tex_subscreen1, uniform_tex_subscreen2;
+GLint uniPoolTexBase, uniform_tex_subscreen1;
 GLint uniTexRefract, uniTexReflect, uniTexDudv, uniTexNormal;
 GLint uniDudvMove;
 GLint uniCamCoord;
 GLint uniWaterLightColor, uniWaterLightPos;
 mat4 meshM, meshV, meshP;
-// mat4 ori_model_sub2, model_sub2, view_sub2, projection_sub2;
 mat4 skyboxM, skyboxV, skyboxP, oriSkyboxM;
 GLuint shaderSkybox, shaderPool, shaderWater;
-// GLuint program_subscreen1, program_subscreen2;
 GLuint tboPoolBase;
 
 Mesh pool;
@@ -162,8 +143,6 @@ int main(int argc, char **argv) {
 
     /* render to fboSubscreen1 */
     glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen1);
-    // glClearColor(1, 0, 0, 1.0f);
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
@@ -183,17 +162,11 @@ int main(int argc, char **argv) {
     glBindVertexArray(pool.vao);
     glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
 
-    //
-    // drawSkybox(model_skybox, meshV, meshP);
-    // drawModels(meshM, meshV, meshP);
-
     /* render to fboSubscreen2 */
     glDisable(GL_CLIP_DISTANCE0);
     glEnable(GL_CLIP_DISTANCE1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen2);
-    // glClearColor(0, 0, 1, 1.0f);
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(shaderPool);
     vec4 planeEquation1 = vec4(0, 1, 0, -3);
@@ -210,18 +183,10 @@ int main(int argc, char **argv) {
     glBindVertexArray(pool.vao);
     glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
 
-    //
-    // drawSkybox(model_skybox, view_sub2, projection_sub2);
-    // drawModels(model_sub2, view_sub2, projection_sub2);
-
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
-    // drawSkybox(model_skybox, meshV, meshP);
-    // drawWater(meshM, meshV, meshP);
-    // drawSubscreen1();
-    // drawSubscreen2();
 
     // draw skybox
     glUseProgram(shaderSkybox);
@@ -302,16 +267,10 @@ void computeMatricesFromInputs() {
   horizontalAngle += mouseSpeed * float(xpos - WINDOW_WIDTH / 2.f);
   verticalAngle += mouseSpeed * float(-ypos + WINDOW_HEIGHT / 2.f);
 
-  // verticalAngle2 = abs(verticalAngle) - 3.14f;
-
   // Direction : Spherical coordinates to Cartesian coordinates conversion
   vec3 direction =
       vec3(sin(verticalAngle) * cos(horizontalAngle), cos(verticalAngle),
            sin(verticalAngle) * sin(horizontalAngle));
-
-  // vec3 direction2 =
-  //     vec3(sin(verticalAngle2) * cos(horizontalAngle), cos(verticalAngle2),
-  //          sin(verticalAngle2) * sin(horizontalAngle));
 
   // Right vector
   vec3 right = vec3(cos(horizontalAngle - 3.14 / 2.f), 0.f,
@@ -319,7 +278,6 @@ void computeMatricesFromInputs() {
 
   // new up vector
   vec3 newUp = cross(right, direction);
-  // vec3 newUp2 = cross(right, direction2);
 
   // Move forward
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -338,16 +296,9 @@ void computeMatricesFromInputs() {
     eyePoint -= right * deltaTime * speed;
   }
 
-  // eyePoint2 = vec3(eyePoint.x, -eyePoint.y, eyePoint.z);
-
   mat4 newV = lookAt(eyePoint, eyePoint + direction, newUp);
   mat4 newP = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT, 0.1f,
                           farPlane);
-
-  // view_sub2 = lookAt(eyePoint2, eyePoint2 + direction2, newUp2);
-  // projection_sub2 = perspective(initialFoV, 1.f * WINDOW_WIDTH /
-  // WINDOW_HEIGHT,
-  //                               0.1f, farPlane);
 
   // update for skybox
   glUseProgram(shaderSkybox);
@@ -486,41 +437,6 @@ void initMesh() {
 }
 
 void initSubscreen1() {
-  // shaders
-  // GLuint vs, fs;
-  // GLint link_ok;
-  //
-  // vs = create_shader("./shader/vsSubscreen1.glsl", GL_VERTEX_SHADER);
-  // fs = create_shader("./shader/fsSubscreen1.glsl", GL_FRAGMENT_SHADER);
-  //
-  // program_subscreen1 = glCreateProgram();
-  // glAttachShader(program_subscreen1, vs);
-  // glAttachShader(program_subscreen1, fs);
-  //
-  // glLinkProgram(program_subscreen1);
-  // glGetProgramiv(program_subscreen1, GL_LINK_STATUS, &link_ok);
-  //
-  // if (link_ok == GL_FALSE) {
-  //   std::cout << "Link failed." << std::endl;
-  // }
-  //
-  // glUseProgram(program_subscreen1);
-  //
-  // buffers
-  // glGenVertexArrays(1, &vao_subscreen1);
-  // glBindVertexArray(vao_subscreen1);
-  //
-  // glGenBuffers(1, &vbo_subscreen1);
-  // glBindBuffer(GL_ARRAY_BUFFER, vbo_subscreen1);
-  // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_subscreen1),
-  //              vertices_subscreen1, GL_STATIC_DRAW);
-  // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  // glEnableVertexAttribArray(0);
-  //
-  // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-  //                       (GLvoid *)(sizeof(GLfloat) * 6 * 3));
-  // glEnableVertexAttribArray(1);
-
   // framebuffer object
   glGenFramebuffers(1, &fboSubscreen1);
   glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen1);
@@ -537,52 +453,9 @@ void initSubscreen1() {
 
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tboSubscreen1, 0);
   glDrawBuffer(GL_COLOR_ATTACHMENT1);
-
-  // uniform_tex_subscreen1 =
-  //     myGetUniformLocation(program_subscreen1, "tex_subscreen1");
-  // glUniform1i(uniform_tex_subscreen1, 2);
-
-  // glBindVertexArray(0);
-  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  // glUseProgram(0);
 }
 
 void initSubscreen2() {
-  // shaders
-  // GLuint vs, fs;
-  // GLint link_ok;
-  //
-  // vs = create_shader("./shader/vsSubscreen2.glsl", GL_VERTEX_SHADER);
-  // fs = create_shader("./shader/fsSubscreen2.glsl", GL_FRAGMENT_SHADER);
-  //
-  // program_subscreen2 = glCreateProgram();
-  // glAttachShader(program_subscreen2, vs);
-  // glAttachShader(program_subscreen2, fs);
-  //
-  // glLinkProgram(program_subscreen2);
-  // glGetProgramiv(program_subscreen2, GL_LINK_STATUS, &link_ok);
-  //
-  // if (link_ok == GL_FALSE) {
-  //   std::cout << "Link failed." << std::endl;
-  // }
-  //
-  // glUseProgram(program_subscreen2);
-  //
-  // // buffers
-  // glGenVertexArrays(1, &vao_subscreen2);
-  // glBindVertexArray(vao_subscreen2);
-  //
-  // glGenBuffers(1, &vbo_subscreen2);
-  // glBindBuffer(GL_ARRAY_BUFFER, vbo_subscreen2);
-  // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_subscreen2),
-  //              vertices_subscreen2, GL_STATIC_DRAW);
-  // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  // glEnableVertexAttribArray(0);
-  //
-  // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-  //                       (GLvoid *)(sizeof(GLfloat) * 6 * 3));
-  // glEnableVertexAttribArray(1);
-
   // framebuffer object
   glGenFramebuffers(1, &fboSubscreen2);
   glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen2);
@@ -599,14 +472,6 @@ void initSubscreen2() {
 
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, tboSubscreen2, 0);
   glDrawBuffer(GL_COLOR_ATTACHMENT2);
-
-  // uniform_tex_subscreen2 =
-  //     myGetUniformLocation(program_subscreen2, "tex_subscreen2");
-  // glUniform1i(uniform_tex_subscreen2, 3);
-  //
-  // glBindVertexArray(0);
-  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  // glUseProgram(0);
 }
 
 // void drawSubscreen1() {
@@ -666,9 +531,6 @@ void initGL() {
 
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST); // must enable depth test!!
-
-  // glDisable(GL_CLIP_DISTANCE0);
-  // glDisable(GL_CLIP_DISTANCE1);
 }
 
 void initOther() {
@@ -695,14 +557,6 @@ void initMatrix() {
   oriSkyboxM = skyboxM;
   skyboxV = V;
   skyboxP = P;
-
-  // matrix for sub window
-  // model_sub2 = meshM;
-  // ori_model_sub2 = meshM;
-  // view_sub2 = lookAt(eyePoint2, eyePoint2 + eyeDirection2, up);
-  // projection_sub2 = perspective(initialFoV, 1.f * WINDOW_WIDTH /
-  // WINDOW_HEIGHT,
-  //                               0.01f, farPlane);
 }
 
 void initShader() {
