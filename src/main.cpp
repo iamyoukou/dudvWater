@@ -198,7 +198,7 @@ int main(int argc, char **argv) {
     // drawModels(model_sub2, view_sub2, projection_sub2);
 
     /* render to main screen */
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // glDisable(GL_CLIP_DISTANCE0);
     // glDisable(GL_CLIP_DISTANCE1);
     // drawSkybox(model_skybox, meshV, meshP);
