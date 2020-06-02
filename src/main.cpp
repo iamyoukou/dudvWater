@@ -6,15 +6,15 @@ bool saveTrigger = false;
 int faceNumber;
 int frameNumber = 0;
 
-float verticalAngle = -2.3f;
-float horizontalAngle = 5.4f;
+float verticalAngle = -2.46533f;
+float horizontalAngle = 6.27918f;
 float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
 float farPlane = 2000.f;
 float dudvMove = 0.f;
 
-vec3 eyePoint = vec3(5.7f, 9.7f, -5.9f);
+vec3 eyePoint = vec3(8.652440, 12.537420, -4.424253);
 vec3 eyeDirection =
     vec3(sin(verticalAngle) * cos(horizontalAngle), cos(verticalAngle),
          sin(verticalAngle) * sin(horizontalAngle));
@@ -108,9 +108,9 @@ void initSkybox();
 void initMesh();
 void initSubscreen1();
 void initSubscreen2();
-// void drawModels(mat4 &, mat4 &, mat4 &);
-// void drawSubscreen1();
-// void drawSubscreen2();
+void drawMesh();
+void drawWater();
+void drawSkybox();
 GLuint createTexture(GLuint, string, FREE_IMAGE_FORMAT);
 
 int main(int argc, char **argv) {
@@ -144,6 +144,7 @@ int main(int argc, char **argv) {
     /* render to fboSubscreen1 */
     glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen1);
 
+    // clipping
     glEnable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
 
@@ -151,66 +152,37 @@ int main(int argc, char **argv) {
     glUseProgram(shaderPool);
     GLuint uniClipPlane0 = myGetUniformLocation(shaderPool, "clipPlane0");
     glUniform4fv(uniClipPlane0, 1, value_ptr(planeEquation0));
-    glUseProgram(0);
 
-    glUseProgram(shaderSkybox);
-    glBindVertexArray(vaoSkybox);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    glUseProgram(shaderPool);
-    glUniform1i(uniPoolTexBase, 10); // change base color
-    glBindVertexArray(pool.vao);
-    glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
+    // draw scene
+    drawSkybox();
+    drawMesh();
 
     /* render to fboSubscreen2 */
+    glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen2);
+
+    // clipping
     glDisable(GL_CLIP_DISTANCE0);
     glEnable(GL_CLIP_DISTANCE1);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen2);
 
     glUseProgram(shaderPool);
     vec4 planeEquation1 = vec4(0, 1, 0, -3);
     GLuint uniClipPlane1 = myGetUniformLocation(shaderPool, "clipPlane1");
     glUniform4fv(uniClipPlane1, 1, value_ptr(planeEquation1));
-    glUseProgram(0);
 
-    glUseProgram(shaderSkybox);
-    glBindVertexArray(vaoSkybox);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    glUseProgram(shaderPool);
-    glUniform1i(uniPoolTexBase, 10); // change base color
-    glBindVertexArray(pool.vao);
-    glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
+    // draw scene
+    drawSkybox();
+    drawMesh();
 
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     glDisable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
 
-    // draw skybox
-    glUseProgram(shaderSkybox);
-    glBindVertexArray(vaoSkybox);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    // draw mesh
-    glUseProgram(shaderPool);
-    glUniform1i(uniPoolTexBase, 10); // change base color
-    glBindVertexArray(pool.vao);
-    glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
-
-    // draw water
-    glUseProgram(shaderWater);
-    uniDudvMove = myGetUniformLocation(shaderWater, "dudvMove");
-    dudvMove += 0.0005f; // speed
-    dudvMove = fmod(dudvMove, 1.0f);
-    glUniform1f(uniDudvMove, dudvMove);
-
-    uniCamCoord = myGetUniformLocation(shaderWater, "camCoord");
-    glUniform3fv(uniCamCoord, 1, value_ptr(eyePoint));
-
-    glBindVertexArray(vaoWater);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    // draw scene
+    drawSkybox();
+    drawMesh();
+    drawWater();
 
     // refresh frame
     glfwSwapBuffers(window);
@@ -474,17 +446,33 @@ void initSubscreen2() {
   glDrawBuffer(GL_COLOR_ATTACHMENT2);
 }
 
-// void drawSubscreen1() {
-//   glUseProgram(program_subscreen1);
-//   glBindVertexArray(vao_subscreen1);
-//   glDrawArrays(GL_TRIANGLES, 0, 6);
-// }
-//
-// void drawSubscreen2() {
-//   glUseProgram(program_subscreen2);
-//   glBindVertexArray(vao_subscreen2);
-//   glDrawArrays(GL_TRIANGLES, 0, 6);
-// }
+void drawMesh() {
+  /* Pool */
+  glUseProgram(shaderPool);
+  glUniform1i(uniPoolTexBase, 10); // change base color
+  glBindVertexArray(pool.vao);
+  glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
+}
+
+void drawWater() {
+  glUseProgram(shaderWater);
+  uniDudvMove = myGetUniformLocation(shaderWater, "dudvMove");
+  dudvMove += 0.0005f; // speed
+  dudvMove = fmod(dudvMove, 1.0f);
+  glUniform1f(uniDudvMove, dudvMove);
+
+  uniCamCoord = myGetUniformLocation(shaderWater, "camCoord");
+  glUniform3fv(uniCamCoord, 1, value_ptr(eyePoint));
+
+  glBindVertexArray(vaoWater);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void drawSkybox() {
+  glUseProgram(shaderSkybox);
+  glBindVertexArray(vaoSkybox);
+  glDrawArrays(GL_TRIANGLES, 0, 36);
+}
 
 void initGL() {
   // Initialise GLFW
