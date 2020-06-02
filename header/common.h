@@ -63,7 +63,7 @@ GLint myGetUniformLocation(GLuint &, string);
 GLuint buildShader(string, string);
 GLuint compileShader(string, GLenum);
 GLuint linkShader(GLuint, GLuint);
-void initMesh(Mesh &);
+void createMesh(Mesh &);
 void updateMesh(Mesh &);
 void findAABB(Mesh &);
 void drawBox(vec3, vec3);

@@ -245,7 +245,7 @@ void Mesh::scale(glm::vec3 xyz) {
 // xyz specifies the rotated angle along each axis
 void Mesh::rotate(glm::vec3 xyz) {}
 
-void initMesh(Mesh &mesh) {
+void createMesh(Mesh &mesh) {
   // write vertex coordinate to array
   int nOfFaces = mesh.faces.size();
 

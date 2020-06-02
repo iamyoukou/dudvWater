@@ -40,6 +40,16 @@ Personally, I think `(du, dv) <- (n1 - n2).xz * someScale` makes more sense.
 `(n1 - n2)` represents the geometry difference between the original plane and the distorted one,
 and `someScale` is a scalar to adjust this difference.
 
+## A guess
+
+As the normal map used in the water simulation has a wavy pattern,
+its first derivative of `(x, y, z)`,
+i.e. the change of surface normals in the space, also has a wavy pattern.
+Therefore, distorting the water texture with this wavy pattern can produce a wavy surface.
+
+I guess the key is how to get a wavy pattern that is related to surface normals,
+not the difference between the original plane and the distorted one.
+
 # Result
 
 The result of using the first derivative of normal is good, though.

@@ -127,7 +127,7 @@ void initTexture();
 void initMatrix();
 void initUniform();
 void initSkybox();
-void initPool();
+void initMesh();
 void initWater();
 void initSubscreen1();
 void initSubscreen2();
@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
   initUniform();
 
   initSkybox();
-  initPool();
+  initMesh();
   // initWater();
   // initSubscreen1();
   // initSubscreen2();
@@ -474,10 +474,10 @@ void initSkybox() {
   glEnableVertexAttribArray(0);
 }
 
-void initPool() {
-  // mesh
+void initMesh() {
+  // pool
   pool = loadObj("./mesh/pool.obj");
-  initMesh(pool);
+  createMesh(pool);
 }
 
 // void initWater() {
@@ -516,14 +516,11 @@ void initPool() {
 //
 //   uniWaterM = myGetUniformLocation(program_water, "model_water");
 //   uniWaterV = myGetUniformLocation(program_water, "view_water");
-//   uniWaterP =
-//       myGetUniformLocation(program_water, "projection_water");
+//   uniWaterP = myGetUniformLocation(program_water, "projection_water");
 //
-//   glUniformMatrix4fv(uniWaterM, 1, GL_FALSE,
-//   value_ptr(meshM)); glUniformMatrix4fv(uniWaterV, 1, GL_FALSE,
-//   value_ptr(meshV)); glUniformMatrix4fv(uniWaterP, 1,
-//   GL_FALSE,
-//                      value_ptr(meshP));
+//   glUniformMatrix4fv(uniWaterM, 1, GL_FALSE, value_ptr(meshM));
+//   glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(meshV));
+//   glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(meshP));
 //
 //   // dudv texture
 //   FIBITMAP *dudv_image = FreeImage_Load(FIF_PNG, "./image/dudv2.png");
