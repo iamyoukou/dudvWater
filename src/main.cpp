@@ -90,13 +90,12 @@ GLfloat vtxsWater[] = {
 //     0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
 
 GLuint vboSkybox, tboSkybox;
-// GLuint obj_subscreen1_tex, vbo_subscreen1, obj_subscreen2_tex,
-// vbo_subscreen2;
+GLuint tboSubscreen1, vbo_subscreen1, tboSubscreen2, vbo_subscreen2;
 GLuint vboWater;
 GLuint tboWaterDudv, tboWaterNormal;
 GLuint vaoSkybox, vaoWater;
 // GLuint vao_subscreen1, vao_subscreen2;
-// GLuint fbo_subscreen1, fbo_subscreen2;
+GLuint fboSubscreen1, fboSubscreen2;
 GLint uniSkyboxM, uniSkyboxV, uniSkyboxP;
 GLint uniPoolM, uniPoolV, uniPoolP;
 GLint uniWaterM, uniWaterV, uniWaterP;
@@ -126,8 +125,8 @@ void initMatrix();
 void initUniform();
 void initSkybox();
 void initMesh();
-// void initSubscreen1();
-// void initSubscreen2();
+void initSubscreen1();
+void initSubscreen2();
 // void drawModels(mat4 &, mat4 &, mat4 &);
 // void drawSubscreen1();
 // void drawSubscreen2();
@@ -143,8 +142,8 @@ int main(int argc, char **argv) {
 
   initSkybox();
   initMesh();
-  // initSubscreen1();
-  // initSubscreen2();
+  initSubscreen1();
+  initSubscreen2();
 
   // a rough way to solve cursor position initialization problem
   // must call glfwPollEvents once to activate glfwSetCursorPos
@@ -161,46 +160,64 @@ int main(int argc, char **argv) {
     // view control
     computeMatricesFromInputs();
 
-    /* render to fbo_subscreen1 */
-    // glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen1);
-    // glClearColor(171 / 256.f, 178 / 256.f, 191 / 256.f, 1.0f);
+    /* render to fboSubscreen1 */
+    glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen1);
+    // glClearColor(1, 0, 0, 1.0f);
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //
-    // glEnable(GL_CLIP_DISTANCE0);
-    // glDisable(GL_CLIP_DISTANCE1);
-    //
-    // vec4 planeEquation0 = vec4(0, 1, 0, -2.2);
-    // glUseProgram(shaderPool);
-    // GLuint uniform_clipPlane0 =
-    //     myGetUniformLocation(shaderPool, "clipPlane0");
-    // glUniform4fv(uniform_clipPlane0, 1, value_ptr(planeEquation0));
-    // glUseProgram(0);
+
+    glEnable(GL_CLIP_DISTANCE0);
+    glDisable(GL_CLIP_DISTANCE1);
+
+    vec4 planeEquation0 = vec4(0, 1, 0, -2.2);
+    glUseProgram(shaderPool);
+    GLuint uniClipPlane0 = myGetUniformLocation(shaderPool, "clipPlane0");
+    glUniform4fv(uniClipPlane0, 1, value_ptr(planeEquation0));
+    glUseProgram(0);
+
+    glUseProgram(shaderSkybox);
+    glBindVertexArray(vaoSkybox);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glUseProgram(shaderPool);
+    glUniform1i(uniPoolTexBase, 10); // change base color
+    glBindVertexArray(pool.vao);
+    glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
+
     //
     // drawSkybox(model_skybox, meshV, meshP);
     // drawModels(meshM, meshV, meshP);
 
-    /* render to fbo_subscreen2 */
-    // glDisable(GL_CLIP_DISTANCE0);
-    // glEnable(GL_CLIP_DISTANCE1);
-    //
-    // glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen2);
-    // glClearColor(171 / 256.f, 178 / 256.f, 191 / 256.f, 1.0f);
+    /* render to fboSubscreen2 */
+    glDisable(GL_CLIP_DISTANCE0);
+    glEnable(GL_CLIP_DISTANCE1);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen2);
+    // glClearColor(0, 0, 1, 1.0f);
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //
-    // glUseProgram(shaderPool);
-    // vec4 planeEquation1 = vec4(0, 1, 0, -3);
-    // GLuint uniform_clipPlane1 =
-    //     myGetUniformLocation(shaderPool, "clipPlane1");
-    // glUniform4fv(uniform_clipPlane1, 1, value_ptr(planeEquation1));
-    // glUseProgram(0);
+
+    glUseProgram(shaderPool);
+    vec4 planeEquation1 = vec4(0, 1, 0, -3);
+    GLuint uniClipPlane1 = myGetUniformLocation(shaderPool, "clipPlane1");
+    glUniform4fv(uniClipPlane1, 1, value_ptr(planeEquation1));
+    glUseProgram(0);
+
+    glUseProgram(shaderSkybox);
+    glBindVertexArray(vaoSkybox);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glUseProgram(shaderPool);
+    glUniform1i(uniPoolTexBase, 10); // change base color
+    glBindVertexArray(pool.vao);
+    glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
+
     //
     // drawSkybox(model_skybox, view_sub2, projection_sub2);
     // drawModels(model_sub2, view_sub2, projection_sub2);
 
     /* render to main screen */
-    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // glDisable(GL_CLIP_DISTANCE0);
-    // glDisable(GL_CLIP_DISTANCE1);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_CLIP_DISTANCE0);
+    glDisable(GL_CLIP_DISTANCE1);
     // drawSkybox(model_skybox, meshV, meshP);
     // drawWater(meshM, meshV, meshP);
     // drawSubscreen1();
@@ -468,135 +485,129 @@ void initMesh() {
   glEnableVertexAttribArray(1);
 }
 
-// void initSubscreen1() {
-//   // shaders
-//   GLuint vs, fs;
-//   GLint link_ok;
-//
-//   vs = create_shader("./shader/vsSubscreen1.glsl", GL_VERTEX_SHADER);
-//   fs = create_shader("./shader/fsSubscreen1.glsl", GL_FRAGMENT_SHADER);
-//
-//   program_subscreen1 = glCreateProgram();
-//   glAttachShader(program_subscreen1, vs);
-//   glAttachShader(program_subscreen1, fs);
-//
-//   glLinkProgram(program_subscreen1);
-//   glGetProgramiv(program_subscreen1, GL_LINK_STATUS, &link_ok);
-//
-//   if (link_ok == GL_FALSE) {
-//     std::cout << "Link failed." << std::endl;
-//   }
-//
-//   glUseProgram(program_subscreen1);
-//
-//   // buffers
-//   glGenVertexArrays(1, &vao_subscreen1);
-//   glBindVertexArray(vao_subscreen1);
-//
-//   glGenBuffers(1, &vbo_subscreen1);
-//   glBindBuffer(GL_ARRAY_BUFFER, vbo_subscreen1);
-//   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_subscreen1),
-//                vertices_subscreen1, GL_STATIC_DRAW);
-//   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-//   glEnableVertexAttribArray(0);
-//
-//   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-//                         (GLvoid *)(sizeof(GLfloat) * 6 * 3));
-//   glEnableVertexAttribArray(1);
-//
-//   //
-//   glGenFramebuffers(1, &fbo_subscreen1);
-//   glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen1);
-//
-//   glActiveTexture(GL_TEXTURE2);
-//   glGenTextures(1, &obj_subscreen1_tex);
-//   glBindTexture(GL_TEXTURE_2D, obj_subscreen1_tex);
-//
-//   // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
-//   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2,
-//   0,
-//                GL_RGB, GL_UNSIGNED_BYTE, 0);
-//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//
-//   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
-//   obj_subscreen1_tex,
-//                        0);
-//   glDrawBuffer(GL_COLOR_ATTACHMENT1);
-//
-//   uniform_tex_subscreen1 =
-//       myGetUniformLocation(program_subscreen1, "tex_subscreen1");
-//   glUniform1i(uniform_tex_subscreen1, 2);
-//
-//   glBindVertexArray(0);
-//   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//   glUseProgram(0);
-// }
+void initSubscreen1() {
+  // shaders
+  // GLuint vs, fs;
+  // GLint link_ok;
+  //
+  // vs = create_shader("./shader/vsSubscreen1.glsl", GL_VERTEX_SHADER);
+  // fs = create_shader("./shader/fsSubscreen1.glsl", GL_FRAGMENT_SHADER);
+  //
+  // program_subscreen1 = glCreateProgram();
+  // glAttachShader(program_subscreen1, vs);
+  // glAttachShader(program_subscreen1, fs);
+  //
+  // glLinkProgram(program_subscreen1);
+  // glGetProgramiv(program_subscreen1, GL_LINK_STATUS, &link_ok);
+  //
+  // if (link_ok == GL_FALSE) {
+  //   std::cout << "Link failed." << std::endl;
+  // }
+  //
+  // glUseProgram(program_subscreen1);
+  //
+  // buffers
+  // glGenVertexArrays(1, &vao_subscreen1);
+  // glBindVertexArray(vao_subscreen1);
+  //
+  // glGenBuffers(1, &vbo_subscreen1);
+  // glBindBuffer(GL_ARRAY_BUFFER, vbo_subscreen1);
+  // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_subscreen1),
+  //              vertices_subscreen1, GL_STATIC_DRAW);
+  // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  // glEnableVertexAttribArray(0);
+  //
+  // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
+  //                       (GLvoid *)(sizeof(GLfloat) * 6 * 3));
+  // glEnableVertexAttribArray(1);
 
-// void initSubscreen2() {
-//   // shaders
-//   GLuint vs, fs;
-//   GLint link_ok;
-//
-//   vs = create_shader("./shader/vsSubscreen2.glsl", GL_VERTEX_SHADER);
-//   fs = create_shader("./shader/fsSubscreen2.glsl", GL_FRAGMENT_SHADER);
-//
-//   program_subscreen2 = glCreateProgram();
-//   glAttachShader(program_subscreen2, vs);
-//   glAttachShader(program_subscreen2, fs);
-//
-//   glLinkProgram(program_subscreen2);
-//   glGetProgramiv(program_subscreen2, GL_LINK_STATUS, &link_ok);
-//
-//   if (link_ok == GL_FALSE) {
-//     std::cout << "Link failed." << std::endl;
-//   }
-//
-//   glUseProgram(program_subscreen2);
-//
-//   // buffers
-//   glGenVertexArrays(1, &vao_subscreen2);
-//   glBindVertexArray(vao_subscreen2);
-//
-//   glGenBuffers(1, &vbo_subscreen2);
-//   glBindBuffer(GL_ARRAY_BUFFER, vbo_subscreen2);
-//   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_subscreen2),
-//                vertices_subscreen2, GL_STATIC_DRAW);
-//   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-//   glEnableVertexAttribArray(0);
-//
-//   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-//                         (GLvoid *)(sizeof(GLfloat) * 6 * 3));
-//   glEnableVertexAttribArray(1);
-//
-//   //
-//   glGenFramebuffers(1, &fbo_subscreen2);
-//   glBindFramebuffer(GL_FRAMEBUFFER, fbo_subscreen2);
-//
-//   glActiveTexture(GL_TEXTURE3);
-//   glGenTextures(1, &obj_subscreen2_tex);
-//   glBindTexture(GL_TEXTURE_2D, obj_subscreen2_tex);
-//
-//   // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
-//   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2,
-//   0,
-//                GL_RGB, GL_UNSIGNED_BYTE, 0);
-//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//
-//   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,
-//   obj_subscreen2_tex,
-//                        0);
-//   glDrawBuffer(GL_COLOR_ATTACHMENT2);
-//
-//   uniform_tex_subscreen2 =
-//       myGetUniformLocation(program_subscreen2, "tex_subscreen2");
-//   glUniform1i(uniform_tex_subscreen2, 3);
-//
-//   glBindVertexArray(0);
-//   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//   glUseProgram(0);
-// }
+  // framebuffer object
+  glGenFramebuffers(1, &fboSubscreen1);
+  glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen1);
+
+  glActiveTexture(GL_TEXTURE0 + 2);
+  glGenTextures(1, &tboSubscreen1);
+  glBindTexture(GL_TEXTURE_2D, tboSubscreen1);
+
+  // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
+               GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tboSubscreen1, 0);
+  glDrawBuffer(GL_COLOR_ATTACHMENT1);
+
+  // uniform_tex_subscreen1 =
+  //     myGetUniformLocation(program_subscreen1, "tex_subscreen1");
+  // glUniform1i(uniform_tex_subscreen1, 2);
+
+  // glBindVertexArray(0);
+  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  // glUseProgram(0);
+}
+
+void initSubscreen2() {
+  // shaders
+  // GLuint vs, fs;
+  // GLint link_ok;
+  //
+  // vs = create_shader("./shader/vsSubscreen2.glsl", GL_VERTEX_SHADER);
+  // fs = create_shader("./shader/fsSubscreen2.glsl", GL_FRAGMENT_SHADER);
+  //
+  // program_subscreen2 = glCreateProgram();
+  // glAttachShader(program_subscreen2, vs);
+  // glAttachShader(program_subscreen2, fs);
+  //
+  // glLinkProgram(program_subscreen2);
+  // glGetProgramiv(program_subscreen2, GL_LINK_STATUS, &link_ok);
+  //
+  // if (link_ok == GL_FALSE) {
+  //   std::cout << "Link failed." << std::endl;
+  // }
+  //
+  // glUseProgram(program_subscreen2);
+  //
+  // // buffers
+  // glGenVertexArrays(1, &vao_subscreen2);
+  // glBindVertexArray(vao_subscreen2);
+  //
+  // glGenBuffers(1, &vbo_subscreen2);
+  // glBindBuffer(GL_ARRAY_BUFFER, vbo_subscreen2);
+  // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_subscreen2),
+  //              vertices_subscreen2, GL_STATIC_DRAW);
+  // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  // glEnableVertexAttribArray(0);
+  //
+  // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
+  //                       (GLvoid *)(sizeof(GLfloat) * 6 * 3));
+  // glEnableVertexAttribArray(1);
+
+  // framebuffer object
+  glGenFramebuffers(1, &fboSubscreen2);
+  glBindFramebuffer(GL_FRAMEBUFFER, fboSubscreen2);
+
+  glActiveTexture(GL_TEXTURE0 + 3);
+  glGenTextures(1, &tboSubscreen2);
+  glBindTexture(GL_TEXTURE_2D, tboSubscreen2);
+
+  // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
+               GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, tboSubscreen2, 0);
+  glDrawBuffer(GL_COLOR_ATTACHMENT2);
+
+  // uniform_tex_subscreen2 =
+  //     myGetUniformLocation(program_subscreen2, "tex_subscreen2");
+  // glUniform1i(uniform_tex_subscreen2, 3);
+  //
+  // glBindVertexArray(0);
+  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  // glUseProgram(0);
+}
 
 // void drawSubscreen1() {
 //   glUseProgram(program_subscreen1);

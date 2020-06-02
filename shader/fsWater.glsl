@@ -55,9 +55,8 @@ void main(){
     specular = pow(specular, shineDamper);
     vec3 specularHighlight = lightColor * specular * reflectivity;
 
-    // outputColor = mix(color_reflection, color_refraction, refractiveFactor);
-
-    // temporarily
-    outputColor = vec4(0.66, 0.71, 0.84, 0);
+    outputColor = mix(color_reflection, color_refraction, refractiveFactor);
     outputColor = mix(outputColor, vec4(0.0, 0.0, 0.1, 1.0) + vec4(specularHighlight, 0), 0.1);
+    // outputColor = color_reflection;
+    // outputColor = color_refraction;
 }
