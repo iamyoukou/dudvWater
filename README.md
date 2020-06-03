@@ -88,6 +88,15 @@ is executed.
 This makes points over `plane1` be inside the clipping space,
 and we get a faked overwater scene.
 
+# Note
+
+![twoEyepoints](./image/twoEyepoints.png)
+
+As shown in the image,
+we use a symmetric eye point and eye direction when calculating the reflection.
+So don't forget to change the view matrix before rendering the reflection texture,
+and change it back once you finish.
+
 # Problem
 
 Currently, this program renders the same scene `three` times per frame.

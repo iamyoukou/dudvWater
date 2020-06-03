@@ -20,10 +20,10 @@ vec3 eyeDirection =
          sin(verticalAngle) * sin(horizontalAngle));
 vec3 up = vec3(0.f, 1.f, 0.f);
 
+// for reflection texture
 float verticalAngleReflect = 3.14 - verticalAngle;
 float horizontalAngleReflect = horizontalAngle;
 vec3 eyePointReflect = vec3(eyePoint.x, -eyePoint.y, eyePoint.z);
-vec3 eyeDirectionReflect;
 
 vec3 lightPosition = vec3(3.f, 3.f, 3.f);
 vec3 lightColor = vec3(1.f, 1.f, 1.f);
@@ -167,6 +167,9 @@ int main(int argc, char **argv) {
     glDisable(GL_CLIP_DISTANCE0);
     glEnable(GL_CLIP_DISTANCE1);
 
+    // for reflection texture,
+    // the eye point and direction are symmetric to xz-plane
+    // so we must change the view matrix for the scene
     glUseProgram(shaderSkybox);
     glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(reflectV));
 
@@ -187,6 +190,7 @@ int main(int argc, char **argv) {
     glDisable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
 
+    // change back to the original view matrix
     glUseProgram(shaderSkybox);
     glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(skyboxV));
 
@@ -358,11 +362,9 @@ void keyCallback(GLFWwindow *keyWnd, int key, int scancode, int action,
       break;
     }
     case GLFW_KEY_I: {
-      // std::cout << "eyePoint: " << to_string(eyePoint) << '\n';
-      // std::cout << "verticleAngle: " << fmod(verticalAngle, 6.28f) << ", "
-      //           << "horizontalAngle: " << fmod(horizontalAngle, 6.28f) <<
-      //           endl;
-      std::cout << to_string(eyeDirectionReflect) << '\n';
+      std::cout << "eyePoint: " << to_string(eyePoint) << '\n';
+      std::cout << "verticleAngle: " << fmod(verticalAngle, 6.28f) << ", "
+                << "horizontalAngle: " << fmod(horizontalAngle, 6.28f) << endl;
 
       break;
     }
