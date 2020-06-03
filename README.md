@@ -50,6 +50,44 @@ Therefore, distorting the water texture with this wavy pattern can produce a wav
 I guess the key is how to get a wavy pattern that is related to surface normals,
 not the difference between the original plane and the distorted one.
 
+# User-defined clip plane
+
+The reflection and refraction textures are faked by a technique called [user-defined clip plane](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#User-defined_clipping).
+
+We specify a plane `(A, B, C, D)`, with `(A, B, C)` being its normal and `D` being its distance to `(0, 0, 0)`.
+For a point `P` in the space, `dot(P, plane)` gives the relationship between `P` and `plane`.
+Here, `P` is expanded to `vec4` with `w = 1`.
+
+```
+dot(P, plane) >= 0 --> non-negative side of the plane --> inside clipping space
+dot(P, plane) < 0 --> negative side of the plane --> outside clipping space
+```
+
+Points on the negative side of the plane will not be rendered.
+
+For example, in this program, I define a clip plane for refraction texture as following:
+
+![clipPlane](./image/clipPlane.png)
+
+and in vertex shader:
+
+```
+gl_ClipDistance[0] = -dot(M * vec4(vtxCoord, 1.0), clipPlane0);
+```
+
+This operation makes points under `plane0` be inside the clipping space,
+and we get a faked underwater scene.
+
+For the reflection texture, `plane1 = vec4(0, 1, 0, -3)` is defined, and
+
+```
+gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
+```
+
+is executed.
+This makes points over `plane1` be inside the clipping space,
+and we get a faked overwater scene.
+
 # Problem
 
 Currently, this program renders the same scene `three` times per frame.

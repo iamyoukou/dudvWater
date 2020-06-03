@@ -148,10 +148,10 @@ int main(int argc, char **argv) {
     glEnable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
 
-    vec4 planeEquation0 = vec4(0, 1, 0, -2.2);
+    vec4 clipPlane0 = vec4(0, 1, 0, -2.2);
     glUseProgram(shaderPool);
     GLuint uniClipPlane0 = myGetUniformLocation(shaderPool, "clipPlane0");
-    glUniform4fv(uniClipPlane0, 1, value_ptr(planeEquation0));
+    glUniform4fv(uniClipPlane0, 1, value_ptr(clipPlane0));
 
     // draw scene
     drawSkybox();
@@ -165,9 +165,9 @@ int main(int argc, char **argv) {
     glEnable(GL_CLIP_DISTANCE1);
 
     glUseProgram(shaderPool);
-    vec4 planeEquation1 = vec4(0, 1, 0, -3);
+    vec4 clipPlane1 = vec4(0, 1, 0, -3);
     GLuint uniClipPlane1 = myGetUniformLocation(shaderPool, "clipPlane1");
-    glUniform4fv(uniClipPlane1, 1, value_ptr(planeEquation1));
+    glUniform4fv(uniClipPlane1, 1, value_ptr(clipPlane1));
 
     // draw scene
     drawSkybox();
@@ -611,11 +611,11 @@ void initUniform() {
 
   // light
   uniLightColor = myGetUniformLocation(shaderPool, "lightColor");
-  uniLightPos = myGetUniformLocation(shaderPool, "lightPosition");
+  uniLightPos = myGetUniformLocation(shaderPool, "lightPos");
   uniLightPower = myGetUniformLocation(shaderPool, "lightPower");
-  uniDiffuse = myGetUniformLocation(shaderPool, "diffuseColor");
-  uniAmbient = myGetUniformLocation(shaderPool, "ambientColor");
-  uniSpecular = myGetUniformLocation(shaderPool, "specularColor");
+  uniDiffuse = myGetUniformLocation(shaderPool, "diffuse");
+  uniAmbient = myGetUniformLocation(shaderPool, "ambient");
+  uniSpecular = myGetUniformLocation(shaderPool, "specular");
 
   glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
   glUniform3fv(uniLightPos, 1, value_ptr(lightPosition));

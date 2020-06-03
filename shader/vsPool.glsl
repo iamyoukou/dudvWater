@@ -8,66 +8,65 @@ out vec2 uv;
 out float gl_ClipDistance[2];
 
 uniform mat4 M, V, P;
-uniform vec3 lightColor, lightPosition;
-uniform vec3 diffuseColor, ambientColor, specularColor;
+uniform vec3 lightColor, lightPos;
+uniform vec3 diffuse, ambient, specular;
 uniform float lightPower;
 uniform vec4 clipPlane0, clipPlane1;
 
 void main(){
-    //P plane
     gl_Position = P * V * M * vec4( vtxCoord, 1.0 );
 
     // use clipping to get reflection and refraction texture
     gl_ClipDistance[0] = -dot(M * vec4(vtxCoord, 1.0), clipPlane0);
     gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
 
-    //V space
-    vec3 vPosition_viewspace = ( V * M * vec4( vtxCoord, 1.0 ) ).xyz;
+    // *View means view space
+    vec3 vtxCoordView = ( V * M * vec4( vtxCoord, 1.0 ) ).xyz;
 
     //transforming normal is different with transforming vertex
-    vec3 vNormal_viewspace = (
+    vec3 normalView = (
         transpose( inverse( V ) ) * M * vec4( normal, 0.0 ) ).xyz;
-    vNormal_viewspace = normalize( vNormal_viewspace );
+    normalView = normalize( normalView );
 
     //point light
-    vec3 lightPosition_viewspace = ( V * M * vec4( lightPosition, 1.0 ) ).xyz;
-    vec3 lightDirection_viewspace = lightPosition_viewspace - vPosition_viewspace;
-    lightDirection_viewspace = normalize( lightDirection_viewspace );
+    vec3 lightPosView = ( V * M * vec4( lightPos, 1.0 ) ).xyz;
+    vec3 lightDirView = lightPosView - vtxCoordView;
+    lightDirView = normalize( lightDirView );
 
     //eye direction
     //in V space, eye position is (0 0 0)
-    vec3 eyeDirection_viewspace = vec3( 0.0 ) - vPosition_viewspace;
-    eyeDirection_viewspace = normalize( eyeDirection_viewspace );
+    vec3 eyeDirView = vec3( 0.0 ) - vtxCoordView;
+    eyeDirView = normalize( eyeDirView );
 
     //reflect vector
-    vec3 reflectDirection_viewspace = reflect(
-            -lightDirection_viewspace, vNormal_viewspace
+    vec3 reflectDirView = reflect(
+            -lightDirView, normalView
     );
 
-    //for diffuseColor
+    //for diffuse
     float cosTheta = clamp(
-        dot( lightDirection_viewspace, vNormal_viewspace ), 0.0, 1.0
+        dot( lightDirView, normalView ), 0.0, 1.0
     );
     float distance_viewspace = length(
-        lightPosition_viewspace - vPosition_viewspace
+        lightPosView - vtxCoordView
     );
 
-    //for specularColor
+    //for specular
     float cosAlpha = clamp(
-        dot( eyeDirection_viewspace, reflectDirection_viewspace ), 0.0, 1.0
+        dot( eyeDirView, reflectDirView ), 0.0, 1.0
     );
 
-    //diffuseColor
+    //diffuse
     //with distance damping
-    fragColor = diffuseColor * lightColor * lightPower * cosTheta
+    fragColor = diffuse * lightColor * lightPower * cosTheta
         / ( distance_viewspace * distance_viewspace );
 
-    //ambientColor
-    fragColor += ambientColor;
+    //ambient
+    fragColor += ambient;
 
-    //specularColor
+    //specular
     //with no distance damping
-    fragColor += specularColor * lightColor * lightPower * pow( cosAlpha, 5 );
+    fragColor += specular * lightColor * lightPower * pow( cosAlpha, 5 );
 
     uv = vtxUv;
 }
