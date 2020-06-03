@@ -20,8 +20,10 @@ vec3 eyeDirection =
          sin(verticalAngle) * sin(horizontalAngle));
 vec3 up = vec3(0.f, 1.f, 0.f);
 
-float verticalAngle2;
-vec3 eyePoint2, eyeDirection2;
+float verticalAngleReflect = 3.14 - verticalAngle;
+float horizontalAngleReflect = horizontalAngle;
+vec3 eyePointReflect = vec3(eyePoint.x, -eyePoint.y, eyePoint.z);
+vec3 eyeDirectionReflect;
 
 vec3 lightPosition = vec3(3.f, 3.f, 3.f);
 vec3 lightColor = vec3(1.f, 1.f, 1.f);
@@ -91,6 +93,7 @@ GLint uniCamCoord;
 GLint uniWaterLightColor, uniWaterLightPos;
 mat4 meshM, meshV, meshP;
 mat4 skyboxM, skyboxV, skyboxP, oriSkyboxM;
+mat4 reflectV;
 GLuint shaderSkybox, shaderPool, shaderWater;
 GLuint tboPoolBase;
 
@@ -164,7 +167,12 @@ int main(int argc, char **argv) {
     glDisable(GL_CLIP_DISTANCE0);
     glEnable(GL_CLIP_DISTANCE1);
 
+    glUseProgram(shaderSkybox);
+    glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(reflectV));
+
     glUseProgram(shaderPool);
+    glUniformMatrix4fv(shaderPool, 1, GL_FALSE, value_ptr(reflectV));
+
     vec4 clipPlane1 = vec4(0, 1, 0, -3);
     GLuint uniClipPlane1 = myGetUniformLocation(shaderPool, "clipPlane1");
     glUniform4fv(uniClipPlane1, 1, value_ptr(clipPlane1));
@@ -178,6 +186,12 @@ int main(int argc, char **argv) {
 
     glDisable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
+
+    glUseProgram(shaderSkybox);
+    glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(skyboxV));
+
+    glUseProgram(shaderPool);
+    glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(meshV));
 
     // draw scene
     drawSkybox();
@@ -239,38 +253,63 @@ void computeMatricesFromInputs() {
   horizontalAngle += mouseSpeed * float(xpos - WINDOW_WIDTH / 2.f);
   verticalAngle += mouseSpeed * float(-ypos + WINDOW_HEIGHT / 2.f);
 
+  horizontalAngleReflect += mouseSpeed * float(xpos - WINDOW_WIDTH / 2.f);
+  verticalAngleReflect += mouseSpeed * float(-ypos + WINDOW_HEIGHT / 2.f);
+
   // Direction : Spherical coordinates to Cartesian coordinates conversion
   vec3 direction =
       vec3(sin(verticalAngle) * cos(horizontalAngle), cos(verticalAngle),
            sin(verticalAngle) * sin(horizontalAngle));
 
+  vec3 directionReflect =
+      vec3(sin(verticalAngleReflect) * cos(horizontalAngleReflect),
+           cos(verticalAngleReflect),
+           sin(verticalAngleReflect) * sin(horizontalAngleReflect));
+
   // Right vector
   vec3 right = vec3(cos(horizontalAngle - 3.14 / 2.f), 0.f,
                     sin(horizontalAngle - 3.14 / 2.f));
 
+  vec3 rightReflect = vec3(cos(horizontalAngleReflect - 3.14 / 2.f), 0.f,
+                           sin(horizontalAngleReflect - 3.14 / 2.f));
+
   // new up vector
   vec3 newUp = cross(right, direction);
+
+  vec3 newUpReflect = cross(rightReflect, directionReflect);
 
   // Move forward
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
     eyePoint += direction * deltaTime * speed;
+
+    eyePointReflect += directionReflect * deltaTime * speed;
   }
   // Move backward
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
     eyePoint -= direction * deltaTime * speed;
+
+    eyePointReflect -= directionReflect * deltaTime * speed;
   }
   // Strafe right
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
     eyePoint += right * deltaTime * speed;
+
+    eyePointReflect += rightReflect * deltaTime * speed;
   }
   // Strafe left
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
     eyePoint -= right * deltaTime * speed;
+
+    eyePointReflect -= rightReflect * deltaTime * speed;
   }
 
   mat4 newV = lookAt(eyePoint, eyePoint + direction, newUp);
   mat4 newP = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT, 0.1f,
                           farPlane);
+
+  // for reflect
+  reflectV =
+      lookAt(eyePointReflect, eyePointReflect + directionReflect, newUpReflect);
 
   // update for skybox
   glUseProgram(shaderSkybox);
@@ -319,9 +358,12 @@ void keyCallback(GLFWwindow *keyWnd, int key, int scancode, int action,
       break;
     }
     case GLFW_KEY_I: {
-      std::cout << "eyePoint: " << to_string(eyePoint) << '\n';
-      std::cout << "verticleAngle: " << fmod(verticalAngle, 6.28f) << ", "
-                << "horizontalAngle: " << fmod(horizontalAngle, 6.28f) << endl;
+      // std::cout << "eyePoint: " << to_string(eyePoint) << '\n';
+      // std::cout << "verticleAngle: " << fmod(verticalAngle, 6.28f) << ", "
+      //           << "horizontalAngle: " << fmod(horizontalAngle, 6.28f) <<
+      //           endl;
+      std::cout << to_string(eyeDirectionReflect) << '\n';
+
       break;
     }
     case GLFW_KEY_Y: {
