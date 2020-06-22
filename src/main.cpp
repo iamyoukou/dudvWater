@@ -2,6 +2,7 @@
 #include "skybox.h"
 
 GLFWwindow *window;
+Skybox *skybox;
 
 bool saveTrigger = false;
 int faceNumber;
@@ -12,7 +13,7 @@ float horizontalAngle = 6.27918f;
 float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
-float farPlane = 2000.f;
+float nearPlane = 0.01f, farPlane = 2000.f;
 float dudvMove = 0.f;
 
 vec3 eyePoint = vec3(8.652440, 12.537420, -4.424253);
@@ -20,6 +21,8 @@ vec3 eyeDirection =
     vec3(sin(verticalAngle) * cos(horizontalAngle), cos(verticalAngle),
          sin(verticalAngle) * sin(horizontalAngle));
 vec3 up = vec3(0.f, 1.f, 0.f);
+
+mat4 model, view, projection;
 
 // for reflection texture
 float verticalAngleReflect = 3.14 - verticalAngle;
@@ -34,38 +37,6 @@ vec3 materialDiffuse = vec3(0.1f, 0.1f, 0.1f);
 vec3 materialAmbient = vec3(0.1f, 0.1f, 0.1f);
 vec3 materialSpecular = vec3(1.f, 1.f, 1.f);
 
-const float SKYBOX_SIZE = 500.f;
-GLfloat vtxsSkybox[] = {
-    -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE,
-    -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,
-    -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,  SKYBOX_SIZE,  -SKYBOX_SIZE,
-    -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE,
-
-    -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE,
-    -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE,
-    SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,  SKYBOX_SIZE,
-    -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,
-
-    SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE,
-    SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,
-    SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,  -SKYBOX_SIZE,
-    SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE,
-
-    -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE, SKYBOX_SIZE,
-    SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,
-    SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,  -SKYBOX_SIZE, SKYBOX_SIZE,
-    -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,
-
-    -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE, SKYBOX_SIZE,  SKYBOX_SIZE,
-    -SKYBOX_SIZE, SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE,
-    SKYBOX_SIZE,  SKYBOX_SIZE,  -SKYBOX_SIZE, SKYBOX_SIZE,  SKYBOX_SIZE,
-    -SKYBOX_SIZE, SKYBOX_SIZE,  -SKYBOX_SIZE,
-
-    -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE,
-    SKYBOX_SIZE,  SKYBOX_SIZE,  -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,
-    -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE, SKYBOX_SIZE,
-    SKYBOX_SIZE,  -SKYBOX_SIZE, SKYBOX_SIZE};
-
 const float WATER_SIZE = 3.8f;
 const float WATER_Y = 2.2f;
 GLfloat vtxsWater[] = {
@@ -76,13 +47,11 @@ GLfloat vtxsWater[] = {
     // texture coords for dudv
     1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
-GLuint vboSkybox, tboSkybox;
 GLuint tboRefract, tboReflect;
 GLuint vboWater;
 GLuint tboWaterDudv, tboWaterNormal;
-GLuint vaoSkybox, vaoWater;
+GLuint vaoWater;
 GLuint fboRefract, fboReflect;
-GLint uniSkyboxM, uniSkyboxV, uniSkyboxP;
 GLint uniPoolM, uniPoolV, uniPoolP;
 GLint uniWaterM, uniWaterV, uniWaterP;
 GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
@@ -93,9 +62,8 @@ GLint uniDudvMove;
 GLint uniCamCoord;
 GLint uniWaterLightColor, uniWaterLightPos;
 mat4 meshM, meshV, meshP;
-mat4 skyboxM, skyboxV, skyboxP, oriSkyboxM;
 mat4 reflectV;
-GLuint shaderSkybox, shaderPool, shaderWater;
+GLuint shaderPool, shaderWater;
 GLuint tboPoolBase;
 
 Mesh pool;
@@ -108,13 +76,11 @@ void initShader();
 void initTexture();
 void initMatrix();
 void initUniform();
-void initSkybox();
 void initMesh();
 void initRefract();
 void initReflect();
 void drawMesh();
 void drawWater();
-void drawSkybox();
 GLuint createTexture(GLuint, string, FREE_IMAGE_FORMAT);
 
 int main(int argc, char **argv) {
@@ -125,10 +91,11 @@ int main(int argc, char **argv) {
   initMatrix();
   initUniform();
 
-  initSkybox();
   initMesh();
   initRefract();
   initReflect();
+
+  skybox = new Skybox();
 
   // a rough way to solve cursor position initialization problem
   // must call glfwPollEvents once to activate glfwSetCursorPos
@@ -158,7 +125,7 @@ int main(int argc, char **argv) {
     glUniform4fv(uniClipPlane0, 1, value_ptr(clipPlane0));
 
     // draw scene
-    drawSkybox();
+    skybox->draw(model, view, projection, eyePoint);
     drawMesh();
 
     /* render to reflection texture */
@@ -171,9 +138,6 @@ int main(int argc, char **argv) {
     // for reflection texture,
     // the eye point and direction are symmetric to xz-plane
     // so we must change the view matrix for the scene
-    glUseProgram(shaderSkybox);
-    glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(reflectV));
-
     glUseProgram(shaderPool);
     glUniformMatrix4fv(shaderPool, 1, GL_FALSE, value_ptr(reflectV));
 
@@ -182,7 +146,7 @@ int main(int argc, char **argv) {
     glUniform4fv(uniClipPlane1, 1, value_ptr(clipPlane1));
 
     // draw scene
-    drawSkybox();
+    skybox->draw(model, reflectV, projection, eyePointReflect);
     drawMesh();
 
     /* render to main screen */
@@ -192,38 +156,35 @@ int main(int argc, char **argv) {
     glDisable(GL_CLIP_DISTANCE1);
 
     // change back to the original view matrix
-    glUseProgram(shaderSkybox);
-    glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(skyboxV));
-
     glUseProgram(shaderPool);
     glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(meshV));
 
     // draw scene
-    drawSkybox();
+    skybox->draw(model, view, projection, eyePoint);
     drawMesh();
     drawWater();
 
     // refresh frame
     glfwSwapBuffers(window);
 
-    // if (saveTrigger) {
-    //   string dir = "./result/output";
-    //   // zero padding
-    //   // e.g. "output0001.bmp"
-    //   string num = to_string(frameNumber);
-    //   num = string(4 - num.length(), '0') + num;
-    //   string output = dir + num + ".bmp";
-    //
-    //   FIBITMAP *outputImage =
-    //       FreeImage_AllocateT(FIT_UINT32, WINDOW_WIDTH * 2, WINDOW_HEIGHT *
-    //       2);
-    //   glReadPixels(0, 0, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, GL_BGRA,
-    //                GL_UNSIGNED_INT_8_8_8_8_REV,
-    //                (GLvoid *)FreeImage_GetBits(outputImage));
-    //   FreeImage_Save(FIF_BMP, outputImage, output.c_str(), 0);
-    //   std::cout << output << " saved." << '\n';
-    //   frameNumber++;
-    // }
+    if (saveTrigger) {
+      string dir = "./result/output";
+      // zero padding
+      // e.g. "output0001.bmp"
+      string num = to_string(frameNumber);
+      num = string(4 - num.length(), '0') + num;
+      string output = dir + num + ".bmp";
+
+      // must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2 on OSX, don't know why
+      FIBITMAP *outputImage =
+          FreeImage_AllocateT(FIT_UINT32, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2);
+      glReadPixels(0, 0, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, GL_BGRA,
+                   GL_UNSIGNED_INT_8_8_8_8_REV,
+                   (GLvoid *)FreeImage_GetBits(outputImage));
+      FreeImage_Save(FIF_BMP, outputImage, output.c_str(), 0);
+      std::cout << output << " saved." << '\n';
+      frameNumber++;
+    }
 
     /* Poll for and process events */
     glfwPollEvents();
@@ -308,32 +269,18 @@ void computeMatricesFromInputs() {
     eyePointReflect -= rightReflect * deltaTime * speed;
   }
 
-  mat4 newV = lookAt(eyePoint, eyePoint + direction, newUp);
-  mat4 newP = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT, 0.1f,
-                          farPlane);
+  view = lookAt(eyePoint, eyePoint + direction, newUp);
+  projection = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
+                           nearPlane, farPlane);
 
   // for reflect
   reflectV =
       lookAt(eyePointReflect, eyePointReflect + directionReflect, newUpReflect);
 
-  // update for skybox
-  glUseProgram(shaderSkybox);
-  skyboxV = newV;
-  skyboxP = newP;
-  glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(skyboxV));
-  glUniformMatrix4fv(uniSkyboxP, 1, GL_FALSE, value_ptr(skyboxP));
-
-  // Let the center of the skybox always at eyePoint
-  // CAUTION: the matrix of GLM is column major
-  skyboxM[3][0] = oriSkyboxM[0][3] + eyePoint.x;
-  skyboxM[3][1] = oriSkyboxM[1][3] + eyePoint.y;
-  skyboxM[3][2] = oriSkyboxM[2][3] + eyePoint.z;
-  glUniformMatrix4fv(uniSkyboxM, 1, GL_FALSE, value_ptr(skyboxM));
-
   // update for pool
   glUseProgram(shaderPool);
-  meshV = newV;
-  meshP = newP;
+  meshV = view;
+  meshP = projection;
   glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(meshV));
   glUniformMatrix4fv(uniPoolP, 1, GL_FALSE, value_ptr(meshP));
 
@@ -378,59 +325,6 @@ void keyCallback(GLFWwindow *keyWnd, int key, int scancode, int action,
       break;
     }
   }
-}
-
-void initSkybox() {
-  // texture
-  glActiveTexture(GL_TEXTURE0);
-  glGenTextures(1, &tboSkybox);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, tboSkybox);
-
-  // parameter setting
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-  // read images into cubemap
-  vector<string> texImages;
-  texImages.push_back("./image/right.png");
-  texImages.push_back("./image/left.png");
-  texImages.push_back("./image/bottom.png");
-  texImages.push_back("./image/top.png");
-  texImages.push_back("./image/back.png");
-  texImages.push_back("./image/front.png");
-
-  for (GLuint i = 0; i < texImages.size(); i++) {
-    int width, height;
-    FIBITMAP *image;
-
-    image = FreeImage_ConvertTo24Bits(
-        FreeImage_Load(FIF_PNG, texImages[i].c_str()));
-
-    width = FreeImage_GetWidth(image);
-    height = FreeImage_GetHeight(image);
-
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height,
-                 0, GL_BGR, GL_UNSIGNED_BYTE, (void *)FreeImage_GetBits(image));
-
-    FreeImage_Unload(image);
-  }
-
-  // vbo
-  // if put these code before setting texture,
-  // no skybox will be rendered
-  // don't know why
-  glGenVertexArrays(1, &vaoSkybox);
-  glBindVertexArray(vaoSkybox);
-
-  glGenBuffers(1, &vboSkybox);
-  glBindBuffer(GL_ARRAY_BUFFER, vboSkybox);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 6 * 3, vtxsSkybox,
-               GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(0);
 }
 
 void initMesh() {
@@ -513,12 +407,6 @@ void drawWater() {
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void drawSkybox() {
-  glUseProgram(shaderSkybox);
-  glBindVertexArray(vaoSkybox);
-  glDrawArrays(GL_TRIANGLES, 0, 36);
-}
-
 void initGL() {
   // Initialise GLFW
   if (!glfwInit()) {
@@ -572,33 +460,20 @@ void initOther() {
 }
 
 void initMatrix() {
-  // common
-  mat4 M, V, P;
-
-  M = translate(mat4(1.f), vec3(0.f, 0.f, -4.f));
-  V = lookAt(eyePoint, eyePoint + eyeDirection, up);
-  P = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT, 0.01f,
-                  farPlane);
+  model = translate(mat4(1.f), vec3(0.f, 0.f, -4.f));
+  view = lookAt(eyePoint, eyePoint + eyeDirection, up);
+  projection = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
+                           nearPlane, farPlane);
 
   // for main window
-  meshM = M;
-  meshV = V;
-  meshP = P;
-
-  // for skybox
-  skyboxM = M;
-  oriSkyboxM = skyboxM;
-  skyboxV = V;
-  skyboxP = P;
+  meshM = model;
+  meshV = view;
+  meshP = projection;
 }
 
 void initShader() {
   // mesh
   shaderPool = buildShader("./shader/vsPool.glsl", "./shader/fsPool.glsl");
-
-  // skybox
-  shaderSkybox =
-      buildShader("./shader/vsSkybox.glsl", "./shader/fsSkybox.glsl");
 
   // water
   shaderWater = buildShader("./shader/vsWater.glsl", "./shader/fsWater.glsl");
@@ -668,18 +543,6 @@ void initUniform() {
   glUniform3fv(uniDiffuse, 1, value_ptr(materialDiffuse));
   glUniform3fv(uniAmbient, 1, value_ptr(materialAmbient));
   glUniform3fv(uniSpecular, 1, value_ptr(materialSpecular));
-
-  /* Skybox */
-  glUseProgram(shaderSkybox);
-
-  // transform
-  uniSkyboxM = myGetUniformLocation(shaderSkybox, "M");
-  uniSkyboxV = myGetUniformLocation(shaderSkybox, "V");
-  uniSkyboxP = myGetUniformLocation(shaderSkybox, "P");
-
-  glUniformMatrix4fv(uniSkyboxM, 1, GL_FALSE, value_ptr(meshM));
-  glUniformMatrix4fv(uniSkyboxV, 1, GL_FALSE, value_ptr(meshV));
-  glUniformMatrix4fv(uniSkyboxP, 1, GL_FALSE, value_ptr(meshP));
 
   /* Water */
   glUseProgram(shaderWater);
