@@ -11,7 +11,7 @@ Water::Water() {
 Water::~Water() {}
 
 void Water::draw(mat4 M, mat4 V, mat4 P, vec3 eyePoint, vec3 lightColor,
-                 vec3 lightPosition, float dudvMove) {
+                 vec3 lightPosition) {
   glUseProgram(shader);
 
   dudvMove += 0.0005f; // speed
@@ -22,6 +22,10 @@ void Water::draw(mat4 M, mat4 V, mat4 P, vec3 eyePoint, vec3 lightColor,
 
   glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
   glUniform3fv(uniLightPos, 1, value_ptr(lightPosition));
+
+  glUniformMatrix4fv(uniM, 1, GL_FALSE, value_ptr(M));
+  glUniformMatrix4fv(uniV, 1, GL_FALSE, value_ptr(V));
+  glUniformMatrix4fv(uniP, 1, GL_FALSE, value_ptr(P));
 
   glBindVertexArray(vao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -44,7 +48,7 @@ void Water::initBuffer() {
 }
 
 void Water::initShader() {
-  shader = buildShader("./shader/vsPool.glsl", "./shader/fsPool.glsl");
+  shader = buildShader("./shader/vsWater.glsl", "./shader/fsWater.glsl");
 }
 
 void Water::initTexture() {

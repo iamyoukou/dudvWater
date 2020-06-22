@@ -5,6 +5,8 @@ class Water {
 public:
   const float WATER_SIZE = 3.8f;
   const float WATER_Y = 2.2f;
+  float dudvMove = 0.f;
+
   GLfloat vtxs[30] = {
       // coords
       -WATER_SIZE, WATER_Y, -WATER_SIZE, -WATER_SIZE, WATER_Y, WATER_SIZE,
@@ -25,7 +27,7 @@ public:
   Water();
   ~Water();
 
-  void draw(mat4, mat4, mat4, vec3, vec3, vec3, float);
+  void draw(mat4, mat4, mat4, vec3, vec3, vec3);
   void initBuffer();
   void initShader();
   void initTexture();

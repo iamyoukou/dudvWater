@@ -1,8 +1,10 @@
 #include "common.h"
 #include "skybox.h"
+#include "water.h"
 
 GLFWwindow *window;
 Skybox *skybox;
+Water *water;
 
 bool saveTrigger = false;
 int faceNumber;
@@ -37,33 +39,15 @@ vec3 materialDiffuse = vec3(0.1f, 0.1f, 0.1f);
 vec3 materialAmbient = vec3(0.1f, 0.1f, 0.1f);
 vec3 materialSpecular = vec3(1.f, 1.f, 1.f);
 
-const float WATER_SIZE = 3.8f;
-const float WATER_Y = 2.2f;
-GLfloat vtxsWater[] = {
-    // coords
-    -WATER_SIZE, WATER_Y, -WATER_SIZE, -WATER_SIZE, WATER_Y, WATER_SIZE,
-    WATER_SIZE, WATER_Y, WATER_SIZE, WATER_SIZE, WATER_Y, WATER_SIZE,
-    WATER_SIZE, WATER_Y, -WATER_SIZE, -WATER_SIZE, WATER_Y, -WATER_SIZE,
-    // texture coords for dudv
-    1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
-
 GLuint tboRefract, tboReflect;
-GLuint vboWater;
-GLuint tboWaterDudv, tboWaterNormal;
-GLuint vaoWater;
 GLuint fboRefract, fboReflect;
 GLint uniPoolM, uniPoolV, uniPoolP;
-GLint uniWaterM, uniWaterV, uniWaterP;
 GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
 GLint uniDiffuse, uniAmbient, uniSpecular;
 GLint uniPoolTexBase;
-GLint uniTexRefract, uniTexReflect, uniTexDudv, uniTexNormal;
-GLint uniDudvMove;
-GLint uniCamCoord;
-GLint uniWaterLightColor, uniWaterLightPos;
 mat4 meshM, meshV, meshP;
 mat4 reflectV;
-GLuint shaderPool, shaderWater;
+GLuint shaderPool;
 GLuint tboPoolBase;
 
 Mesh pool;
@@ -80,7 +64,6 @@ void initMesh();
 void initRefract();
 void initReflect();
 void drawMesh();
-void drawWater();
 
 int main(int argc, char **argv) {
   initGL();
@@ -95,6 +78,7 @@ int main(int argc, char **argv) {
   initReflect();
 
   skybox = new Skybox();
+  water = new Water();
 
   // a rough way to solve cursor position initialization problem
   // must call glfwPollEvents once to activate glfwSetCursorPos
@@ -161,7 +145,7 @@ int main(int argc, char **argv) {
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
     drawMesh();
-    drawWater();
+    water->draw(model, view, projection, eyePoint, lightColor, lightPosition);
 
     // refresh frame
     glfwSwapBuffers(window);
@@ -283,11 +267,6 @@ void computeMatricesFromInputs() {
   glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(meshV));
   glUniformMatrix4fv(uniPoolP, 1, GL_FALSE, value_ptr(meshP));
 
-  // update for water
-  glUseProgram(shaderWater);
-  glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(meshV));
-  glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(meshP));
-
   // For the next frame, the "last time" will be "now"
   lastTime = currentTime;
 }
@@ -330,20 +309,6 @@ void initMesh() {
   // pool
   pool = loadObj("./mesh/pool.obj");
   createMesh(pool);
-
-  // water
-  glGenVertexArrays(1, &vaoWater);
-  glBindVertexArray(vaoWater);
-
-  glGenBuffers(1, &vboWater);
-  glBindBuffer(GL_ARRAY_BUFFER, vboWater);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vtxsWater), vtxsWater, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(0);
-
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-                        (GLvoid *)(sizeof(GLfloat) * 6 * 3));
-  glEnableVertexAttribArray(1);
 }
 
 void initRefract() {
@@ -390,20 +355,6 @@ void drawMesh() {
   glUniform1i(uniPoolTexBase, 10); // change base color
   glBindVertexArray(pool.vao);
   glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
-}
-
-void drawWater() {
-  glUseProgram(shaderWater);
-  uniDudvMove = myGetUniformLocation(shaderWater, "dudvMove");
-  dudvMove += 0.0005f; // speed
-  dudvMove = fmod(dudvMove, 1.0f);
-  glUniform1f(uniDudvMove, dudvMove);
-
-  uniCamCoord = myGetUniformLocation(shaderWater, "camCoord");
-  glUniform3fv(uniCamCoord, 1, value_ptr(eyePoint));
-
-  glBindVertexArray(vaoWater);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void initGL() {
@@ -473,20 +424,11 @@ void initMatrix() {
 void initShader() {
   // mesh
   shaderPool = buildShader("./shader/vsPool.glsl", "./shader/fsPool.glsl");
-
-  // water
-  shaderWater = buildShader("./shader/vsWater.glsl", "./shader/fsWater.glsl");
 }
 
 void initTexture() {
   // pool base texture
   setTexture(tboPoolBase, 10, "./image/stone.png", FIF_PNG);
-
-  // water dudv map
-  setTexture(tboWaterDudv, 11, "./image/dudv2.png", FIF_PNG);
-
-  // water normal map
-  setTexture(tboWaterNormal, 12, "./image/normalMap2.png", FIF_PNG);
 }
 
 void initUniform() {
@@ -519,33 +461,4 @@ void initUniform() {
   glUniform3fv(uniDiffuse, 1, value_ptr(materialDiffuse));
   glUniform3fv(uniAmbient, 1, value_ptr(materialAmbient));
   glUniform3fv(uniSpecular, 1, value_ptr(materialSpecular));
-
-  /* Water */
-  glUseProgram(shaderWater);
-
-  // transform
-  uniWaterM = myGetUniformLocation(shaderWater, "M");
-  uniWaterV = myGetUniformLocation(shaderWater, "V");
-  uniWaterP = myGetUniformLocation(shaderWater, "P");
-
-  glUniformMatrix4fv(uniWaterM, 1, GL_FALSE, value_ptr(meshM));
-  glUniformMatrix4fv(uniWaterV, 1, GL_FALSE, value_ptr(meshV));
-  glUniformMatrix4fv(uniWaterP, 1, GL_FALSE, value_ptr(meshP));
-
-  // texture
-  uniTexReflect = myGetUniformLocation(shaderWater, "texReflect");
-  uniTexRefract = myGetUniformLocation(shaderWater, "texRefract");
-  uniTexDudv = myGetUniformLocation(shaderWater, "texDudv");
-  uniTexNormal = myGetUniformLocation(shaderWater, "texNormal");
-
-  glUniform1i(uniTexDudv, 11);
-  glUniform1i(uniTexNormal, 12);
-  glUniform1i(uniTexReflect, 3);
-  glUniform1i(uniTexRefract, 2);
-
-  // light
-  uniWaterLightColor = myGetUniformLocation(shaderWater, "lightColor");
-  uniWaterLightPos = myGetUniformLocation(shaderWater, "lightPos");
-  glUniform3fv(uniWaterLightColor, 1, value_ptr(lightColor));
-  glUniform3fv(uniWaterLightPos, 1, value_ptr(lightPosition));
 }
