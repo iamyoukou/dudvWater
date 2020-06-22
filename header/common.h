@@ -1,3 +1,6 @@
+#ifndef COMMON_H
+#define COMMON_H
+
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -67,3 +70,5 @@ void createMesh(Mesh &);
 void updateMesh(Mesh &);
 void findAABB(Mesh &);
 void drawBox(vec3, vec3);
+
+#endif
