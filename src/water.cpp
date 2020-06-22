@@ -6,6 +6,8 @@ Water::Water() {
   initBuffer();
   initTexture();
   initUniform();
+  initReflect();
+  initRefract();
 }
 
 Water::~Water() {}
@@ -92,4 +94,42 @@ void Water::initUniform() {
   // other
   uniDudvMove = myGetUniformLocation(shader, "dudvMove");
   uniCamCoord = myGetUniformLocation(shader, "camCoord");
+}
+
+void Water::initReflect() {
+  // framebuffer object
+  glGenFramebuffers(1, &fboReflect);
+  glBindFramebuffer(GL_FRAMEBUFFER, fboReflect);
+
+  glActiveTexture(GL_TEXTURE0 + 3);
+  glGenTextures(1, &tboReflect);
+  glBindTexture(GL_TEXTURE_2D, tboReflect);
+
+  // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
+               GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, tboReflect, 0);
+  glDrawBuffer(GL_COLOR_ATTACHMENT2);
+}
+
+void Water::initRefract() {
+  // framebuffer object
+  glGenFramebuffers(1, &fboRefract);
+  glBindFramebuffer(GL_FRAMEBUFFER, fboRefract);
+
+  glActiveTexture(GL_TEXTURE0 + 2);
+  glGenTextures(1, &tboRefract);
+  glBindTexture(GL_TEXTURE_2D, tboRefract);
+
+  // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
+               GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tboRefract, 0);
+  glDrawBuffer(GL_COLOR_ATTACHMENT1);
 }

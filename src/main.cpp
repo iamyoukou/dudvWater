@@ -39,8 +39,6 @@ vec3 materialDiffuse = vec3(0.1f, 0.1f, 0.1f);
 vec3 materialAmbient = vec3(0.1f, 0.1f, 0.1f);
 vec3 materialSpecular = vec3(1.f, 1.f, 1.f);
 
-GLuint tboRefract, tboReflect;
-GLuint fboRefract, fboReflect;
 GLint uniPoolM, uniPoolV, uniPoolP;
 GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
 GLint uniDiffuse, uniAmbient, uniSpecular;
@@ -61,8 +59,6 @@ void initTexture();
 void initMatrix();
 void initUniform();
 void initMesh();
-void initRefract();
-void initReflect();
 void drawMesh();
 
 int main(int argc, char **argv) {
@@ -72,10 +68,7 @@ int main(int argc, char **argv) {
   initTexture();
   initMatrix();
   initUniform();
-
   initMesh();
-  initRefract();
-  initReflect();
 
   skybox = new Skybox();
   water = new Water();
@@ -96,7 +89,7 @@ int main(int argc, char **argv) {
     computeMatricesFromInputs();
 
     /* render to refraction texture */
-    glBindFramebuffer(GL_FRAMEBUFFER, fboRefract);
+    glBindFramebuffer(GL_FRAMEBUFFER, water->fboRefract);
 
     // clipping
     glEnable(GL_CLIP_DISTANCE0);
@@ -112,7 +105,7 @@ int main(int argc, char **argv) {
     drawMesh();
 
     /* render to reflection texture */
-    glBindFramebuffer(GL_FRAMEBUFFER, fboReflect);
+    glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
 
     // clipping
     glDisable(GL_CLIP_DISTANCE0);
@@ -309,44 +302,6 @@ void initMesh() {
   // pool
   pool = loadObj("./mesh/pool.obj");
   createMesh(pool);
-}
-
-void initRefract() {
-  // framebuffer object
-  glGenFramebuffers(1, &fboRefract);
-  glBindFramebuffer(GL_FRAMEBUFFER, fboRefract);
-
-  glActiveTexture(GL_TEXTURE0 + 2);
-  glGenTextures(1, &tboRefract);
-  glBindTexture(GL_TEXTURE_2D, tboRefract);
-
-  // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
-               GL_RGB, GL_UNSIGNED_BYTE, 0);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tboRefract, 0);
-  glDrawBuffer(GL_COLOR_ATTACHMENT1);
-}
-
-void initReflect() {
-  // framebuffer object
-  glGenFramebuffers(1, &fboReflect);
-  glBindFramebuffer(GL_FRAMEBUFFER, fboReflect);
-
-  glActiveTexture(GL_TEXTURE0 + 3);
-  glGenTextures(1, &tboReflect);
-  glBindTexture(GL_TEXTURE_2D, tboReflect);
-
-  // On OSX, must use WINDOW_WIDTH * 2 and WINDOW_HEIGHT * 2, don't know why
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH * 2, WINDOW_HEIGHT * 2, 0,
-               GL_RGB, GL_UNSIGNED_BYTE, 0);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, tboReflect, 0);
-  glDrawBuffer(GL_COLOR_ATTACHMENT2);
 }
 
 void drawMesh() {

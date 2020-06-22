@@ -23,6 +23,8 @@ public:
   GLint uniTexReflect, uniTexRefract, uniTexDudv, uniTexNormal;
   GLint uniDudvMove, uniCamCoord;
   GLuint shader;
+  GLuint tboRefract, tboReflect;
+  GLuint fboRefract, fboReflect;
 
   Water();
   ~Water();
@@ -32,6 +34,8 @@ public:
   void initShader();
   void initTexture();
   void initUniform();
+  void initReflect();
+  void initRefract();
 };
 
 #endif
