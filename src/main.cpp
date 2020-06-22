@@ -81,7 +81,6 @@ void initRefract();
 void initReflect();
 void drawMesh();
 void drawWater();
-GLuint createTexture(GLuint, string, FREE_IMAGE_FORMAT);
 
 int main(int argc, char **argv) {
   initGL();
@@ -479,38 +478,15 @@ void initShader() {
   shaderWater = buildShader("./shader/vsWater.glsl", "./shader/fsWater.glsl");
 }
 
-GLuint createTexture(GLuint texUnit, string imgDir, FREE_IMAGE_FORMAT imgType) {
-  glActiveTexture(GL_TEXTURE0 + texUnit);
-
-  FIBITMAP *texImage =
-      FreeImage_ConvertTo24Bits(FreeImage_Load(imgType, imgDir.c_str()));
-
-  GLuint tboTex;
-  glGenTextures(1, &tboTex);
-  glBindTexture(GL_TEXTURE_2D, tboTex);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FreeImage_GetWidth(texImage),
-               FreeImage_GetHeight(texImage), 0, GL_BGR, GL_UNSIGNED_BYTE,
-               (void *)FreeImage_GetBits(texImage));
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-  // release
-  FreeImage_Unload(texImage);
-
-  return tboTex;
-}
-
 void initTexture() {
   // pool base texture
-  tboPoolBase = createTexture(10, "./image/stone.png", FIF_PNG);
-  glActiveTexture(GL_TEXTURE0 + 10);
+  setTexture(tboPoolBase, 10, "./image/stone.png", FIF_PNG);
 
   // water dudv map
-  tboWaterDudv = createTexture(11, "./image/dudv2.png", FIF_PNG);
-  glActiveTexture(GL_TEXTURE0 + 11);
+  setTexture(tboWaterDudv, 11, "./image/dudv2.png", FIF_PNG);
 
   // water normal map
-  tboWaterNormal = createTexture(12, "./image/normalMap2.png", FIF_PNG);
-  glActiveTexture(GL_TEXTURE0 + 12);
+  setTexture(tboWaterNormal, 12, "./image/normalMap2.png", FIF_PNG);
 }
 
 void initUniform() {

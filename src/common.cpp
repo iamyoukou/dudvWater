@@ -530,3 +530,21 @@ void drawBox(vec3 min, vec3 max) {
   glDeleteBuffers(1, &ibo);
   glDeleteVertexArrays(1, &vao);
 }
+
+void setTexture(GLuint &tbo, int texUnit, const string texDir,
+                FREE_IMAGE_FORMAT imgType) {
+  glActiveTexture(GL_TEXTURE0 + texUnit);
+
+  FIBITMAP *texImage =
+      FreeImage_ConvertTo24Bits(FreeImage_Load(imgType, texDir.c_str()));
+
+  glGenTextures(1, &tbo);
+  glBindTexture(GL_TEXTURE_2D, tbo);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FreeImage_GetWidth(texImage),
+               FreeImage_GetHeight(texImage), 0, GL_BGR, GL_UNSIGNED_BYTE,
+               (void *)FreeImage_GetBits(texImage));
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  // release
+  FreeImage_Unload(texImage);
+}

@@ -70,5 +70,6 @@ void createMesh(Mesh &);
 void updateMesh(Mesh &);
 void findAABB(Mesh &);
 void drawBox(vec3, vec3);
+void setTexture(GLuint &, int, const string, FREE_IMAGE_FORMAT);
 
 #endif
