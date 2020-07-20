@@ -31,7 +31,7 @@ float verticalAngleReflect = 3.14 - verticalAngle;
 float horizontalAngleReflect = horizontalAngle;
 vec3 eyePointReflect = vec3(eyePoint.x, -eyePoint.y, eyePoint.z);
 
-vec3 lightPosition = vec3(3.f, 3.f, 3.f);
+vec3 lightPosition = vec3(-10.f, 10.f, 10.f);
 vec3 lightColor = vec3(1.f, 1.f, 1.f);
 float lightPower = 12.f;
 

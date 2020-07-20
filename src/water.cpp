@@ -47,6 +47,10 @@ void Water::initBuffer() {
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
                         (GLvoid *)(sizeof(GLfloat) * 6 * 3));
   glEnableVertexAttribArray(1);
+  // normals
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0,
+                        (GLvoid *)(sizeof(GLfloat) * 6 * (3 + 2)));
+  glEnableVertexAttribArray(2);
 }
 
 void Water::initShader() {

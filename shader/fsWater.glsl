@@ -4,6 +4,8 @@ in vec4 clipSpace;
 in vec2 dudvCoord;
 in vec3 toCamera;
 in vec3 fromLightVector;
+in vec3 worldPos;
+in vec3 worldN;
 
 uniform sampler2D texReflect;
 uniform sampler2D texRefract;
@@ -17,7 +19,28 @@ out vec4 outputColor;
 
 const float alpha = 0.02;
 const float shineDamper = 10.0;
-const float reflectivity = 0.6;
+const float reflectivity = 0.75;
+
+// compute fragment normal from a normal map
+// i.e. transform it from tangent space to world space
+// the code is from https://github.com/JoeyDeVries/LearnOpenGL
+// check the theory at https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+vec3 getNormalFromMap(vec2 distor)
+{
+    vec3 tangentNormal = texture(texNormal, distor).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx(worldPos);
+    vec3 Q2  = dFdy(worldPos);
+    vec2 st1 = dFdx(dudvCoord);
+    vec2 st2 = dFdy(dudvCoord);
+
+    vec3 n   = normalize(worldN);
+    vec3 t  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 b  = -normalize(cross(n, t));
+    mat3 tbn = mat3(t, b, n);
+
+    return normalize(tbn * tangentNormal);
+}
 
 void main(){
     vec2 ndc = vec2(clipSpace.x/clipSpace.w, clipSpace.y/clipSpace.w);
@@ -43,8 +66,9 @@ void main(){
     vec4 colorReflection = texture(texReflect, texCoordReflect);
     vec4 colorRefraction = texture(texRefract, texCoordRefract);
 
-    vec4 normalMapColor = texture(texNormal, distortion);
-    vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b*2.0-1.0, normalMapColor.g*2.0-1.0);
+    // vec4 normalMapColor = texture(texNormal, distortion);
+    // vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b*2.0-1.0, normalMapColor.g*2.0-1.0);
+    vec3 normal = getNormalFromMap(distortion);
 
     vec3 viewVector = normalize(toCamera);
     float refractiveFactor = dot(viewVector, vec3(0, 1, 0));

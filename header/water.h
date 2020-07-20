@@ -7,13 +7,16 @@ public:
   const float WATER_Y = 2.2f;
   float dudvMove = 0.f;
 
-  GLfloat vtxs[30] = {
+  GLfloat vtxs[48] = {
       // coords
       -WATER_SIZE, WATER_Y, -WATER_SIZE, -WATER_SIZE, WATER_Y, WATER_SIZE,
       WATER_SIZE, WATER_Y, WATER_SIZE, WATER_SIZE, WATER_Y, WATER_SIZE,
       WATER_SIZE, WATER_Y, -WATER_SIZE, -WATER_SIZE, WATER_Y, -WATER_SIZE,
       // texture coords for dudv
-      1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+      1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+      // normals
+      0.f, 1.f, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 0.f,
+      0.f, 1.f, 0.f};
 
   GLuint vbo;
   GLuint tboDudv, tboNormal;
