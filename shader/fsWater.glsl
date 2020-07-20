@@ -18,8 +18,8 @@ uniform vec3 lightColor;
 out vec4 outputColor;
 
 const float alpha = 0.02;
-const float shineDamper = 10.0;
-const float reflectivity = 0.75;
+const float shineDamper = 30.0;
+const float reflectivity = 3.0;
 
 // compute fragment normal from a normal map
 // i.e. transform it from tangent space to world space
@@ -66,16 +66,17 @@ void main(){
     vec4 colorReflection = texture(texReflect, texCoordReflect);
     vec4 colorRefraction = texture(texRefract, texCoordRefract);
 
-    // vec4 normalMapColor = texture(texNormal, distortion);
-    // vec3 normal = vec3(normalMapColor.r*2.0-1.0, normalMapColor.b*2.0-1.0, normalMapColor.g*2.0-1.0);
     vec3 normal = getNormalFromMap(distortion);
 
-    vec3 viewVector = normalize(toCamera);
+    vec3 viewVector = toCamera;
     float refractiveFactor = dot(viewVector, vec3(0, 1, 0));
     refractiveFactor = pow(refractiveFactor, 3.0);
 
-    vec3 reflectedLight = reflect(normalize(fromLightVector), normal);
-    float specular = max(dot(reflectedLight, viewVector), 0.0);
+    vec3 reflectedLight = reflect(fromLightVector, normal);
+
+    vec3 halfway = normalize(-fromLightVector + viewVector);
+    // float specular = max(dot(reflectedLight, viewVector), 0.0);
+    float specular = max(dot(halfway, normal), 0.f);
     specular = pow(specular, shineDamper);
     vec3 specularHighlight = lightColor * specular * reflectivity;
 

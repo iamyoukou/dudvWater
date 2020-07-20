@@ -20,13 +20,10 @@ void main(){
     clipSpace = gl_Position;
     dudvCoord = vtxUv;
 
-    vec4 vtxCoordWorld = M * vec4(vtxCoord, 1.0);
-    vec4 camCoordWorld = M * vec4(camCoord, 1.0);
-    vec4 lightPosWorld = M * vec4(lightPos, 1.0);
-    toCamera = camCoordWorld.xyz - vtxCoordWorld.xyz;
-    fromLightVector = vtxCoordWorld.xyz - lightPosWorld.xyz;
-
     worldPos = (M * vec4(vtxCoord, 1.0)).xyz;
 
     worldN = normalize((vec4(vtxN, 1.0) * inverse(M)).xyz);
+
+    toCamera = normalize(camCoord - worldPos);
+    fromLightVector = normalize(worldPos - lightPos);
 }
