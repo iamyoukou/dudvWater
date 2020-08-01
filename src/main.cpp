@@ -7,6 +7,7 @@ GLFWwindow *window;
 Skybox *skybox;
 Water *water;
 Pool *pool;
+Mesh *mesh;
 
 bool saveTrigger = false;
 int frameNumber = 0;
@@ -50,6 +51,7 @@ int main(int argc, char **argv) {
   skybox = new Skybox();
   water = new Water();
   pool = new Pool("./mesh/pool.obj");
+  mesh = new Mesh("./mesh/cube.obj");
 
   initTexture();
   initMatrix();
@@ -84,6 +86,10 @@ int main(int argc, char **argv) {
     pool->draw(model, view, projection, eyePoint, lightColor, lightPosition, 13,
                14);
 
+    mat4 meshM = translate(mat4(1.f), vec3(0, 6.f, 0));
+    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 13,
+               14);
+
     /* render to reflection texture */
     glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
 
@@ -101,6 +107,8 @@ int main(int argc, char **argv) {
     skybox->draw(model, reflectV, projection, eyePointReflect);
     pool->draw(model, reflectV, projection, eyePoint, lightColor, lightPosition,
                13, 14);
+    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 13,
+               14);
 
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -114,6 +122,8 @@ int main(int argc, char **argv) {
     pool->draw(model, view, projection, eyePoint, lightColor, lightPosition, 13,
                14);
     water->draw(model, view, projection, eyePoint, lightColor, lightPosition);
+    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 13,
+               14);
 
     // refresh frame
     glfwSwapBuffers(window);
@@ -323,13 +333,16 @@ void initOther() {
 }
 
 void initMatrix() {
-  model = translate(mat4(1.f), vec3(0.f, 0.f, -4.f));
+  model = translate(mat4(1.f), vec3(0.f, 0.f, 0.f));
   view = lookAt(eyePoint, eyePoint + eyeDirection, up);
   projection = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
                            nearPlane, farPlane);
 }
 
 void initTexture() {
+  pool->setTexture(pool->tboBase, 13, "./image/stone.png", FIF_PNG);
+  pool->setTexture(pool->tboNormal, 14, "./image/stone.png", FIF_PNG);
+
   pool->setTexture(pool->tboBase, 13, "./image/stone.png", FIF_PNG);
   pool->setTexture(pool->tboNormal, 14, "./image/stone.png", FIF_PNG);
 }

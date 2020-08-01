@@ -32,35 +32,44 @@ typedef struct {
 class Mesh {
 public:
   // mesh data
-  std::vector<glm::vec3> vertices;
-  std::vector<glm::vec2> uvs;
-  std::vector<glm::vec3> faceNormals;
-  std::vector<Face> faces;
+  vector<vec3> vertices;
+  vector<vec2> uvs;
+  vector<vec3> faceNormals;
+  vector<Face> faces;
 
   // opengl data
   GLuint vboVtxs, vboUvs, vboNormals;
   GLuint vao;
+  GLuint shader;
+  GLuint tboBase, tboNormal;
+  GLint uniModel, uniView, uniProjection;
+  GLint uniEyePoint, uniLightColor, uniLightPosition;
+  GLint uniTexBase, uniTexNormal;
 
   // aabb
   vec3 min, max;
 
+  mat4 model, view, projection;
+
   /* Constructors */
-  Mesh(){};
-  ~Mesh() {
-    glDeleteBuffers(1, &vboVtxs);
-    glDeleteBuffers(1, &vboUvs);
-    glDeleteBuffers(1, &vboNormals);
-    glDeleteVertexArrays(1, &vao);
-  };
+  Mesh(const string);
+  ~Mesh();
 
   /* Member functions */
-  void translate(glm::vec3);
-  void scale(glm::vec3);
-  void rotate(glm::vec3);
+  void loadObj(const string);
+  void initBuffers();
+  void initShader();
+  void initUniform();
+  void draw(mat4, mat4, mat4, vec3, vec3, vec3, int, int);
+  void setTexture(GLuint &, int, const string, FREE_IMAGE_FORMAT);
+
+  void translate(vec3);
+  void scale(vec3);
+  void rotate(vec3);
+  void findAABB();
 };
 
 std::string readFile(const std::string);
-Mesh loadObj(std::string);
 void printLog(GLuint &);
 GLint myGetUniformLocation(GLuint &, string);
 GLuint buildShader(string, string);
