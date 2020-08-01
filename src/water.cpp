@@ -116,6 +116,16 @@ void Water::initReflect() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, tboReflect, 0);
+
+  // The depth buffer
+  // User-defined framebuffer must have a depth buffer to enable depth test
+  glGenRenderbuffers(1, &rboDepthReflect);
+  glBindRenderbuffer(GL_RENDERBUFFER, rboDepthReflect);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH * 2,
+                        WINDOW_HEIGHT * 2);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                            GL_RENDERBUFFER, rboDepthReflect);
+
   glDrawBuffer(GL_COLOR_ATTACHMENT2);
 }
 

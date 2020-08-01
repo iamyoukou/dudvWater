@@ -72,26 +72,31 @@ int main(int argc, char **argv) {
     computeMatricesFromInputs();
 
     /* render to refraction texture */
-    glBindFramebuffer(GL_FRAMEBUFFER, water->fboRefract);
+    // glBindFramebuffer(GL_FRAMEBUFFER, water->fboRefract);
 
     // clipping
-    glEnable(GL_CLIP_DISTANCE0);
-    glDisable(GL_CLIP_DISTANCE1);
-
-    vec4 clipPlane0 = vec4(0, 1, 0, -2.2);
-    glUniform4fv(pool->uniClipPlane0, 1, value_ptr(clipPlane0));
-
-    // draw scene
-    skybox->draw(model, view, projection, eyePoint);
-    pool->draw(model, view, projection, eyePoint, lightColor, lightPosition, 13,
-               14);
-
+    // glEnable(GL_CLIP_DISTANCE0);
+    // glDisable(GL_CLIP_DISTANCE1);
+    //
+    // vec4 clipPlane0 = vec4(0, 1, 0, -2.2);
+    // glUniform4fv(pool->uniClipPlane0, 1, value_ptr(clipPlane0));
+    //
+    // // draw scene
+    // skybox->draw(model, view, projection, eyePoint);
+    // pool->draw(model, view, projection, eyePoint, lightColor, lightPosition,
+    // 13,
+    //            14);
+    //
     mat4 meshM = translate(mat4(1.f), vec3(0, 6.f, 0));
-    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 13,
-               14);
+    // mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition,
+    // 13,
+    //            14);
 
     /* render to reflection texture */
     glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
+    // for user-defined framebuffer,
+    // must clear the depth buffer before rendering to enable depth test
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     // clipping
     glDisable(GL_CLIP_DISTANCE0);
@@ -100,15 +105,17 @@ int main(int argc, char **argv) {
     // for reflection texture,
     // the eye point and direction are symmetric to xz-plane
     // so we must change the view matrix for the scene
+    // note: plane (0, 1, 0, D) means plane y = -D, not y = D
     vec4 clipPlane1 = vec4(0, 1, 0, -3);
+    glUseProgram(pool->shader);
     glUniform4fv(pool->uniClipPlane1, 1, value_ptr(clipPlane1));
 
     // draw scene
     skybox->draw(model, reflectV, projection, eyePointReflect);
     pool->draw(model, reflectV, projection, eyePoint, lightColor, lightPosition,
                13, 14);
-    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 13,
-               14);
+    mesh->draw(meshM, reflectV, projection, eyePoint, lightColor, lightPosition,
+               13, 14);
 
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

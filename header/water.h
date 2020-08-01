@@ -30,6 +30,7 @@ public:
   GLuint shader;
   GLuint tboRefract, tboReflect;
   GLuint fboRefract, fboReflect;
+  GLuint rboDepthReflect;
 
   Water();
   ~Water();
