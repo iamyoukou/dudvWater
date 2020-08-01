@@ -1,6 +1,8 @@
 #ifndef WATER_H
 #define WATER_H
 
+#include "common.h"
+
 class Water {
 public:
   const float WATER_SIZE = 3.8f;
@@ -39,6 +41,7 @@ public:
   void initUniform();
   void initReflect();
   void initRefract();
+  void setTexture(GLuint &, int, const string, FREE_IMAGE_FORMAT);
 };
 
 #endif

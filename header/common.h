@@ -66,10 +66,5 @@ GLint myGetUniformLocation(GLuint &, string);
 GLuint buildShader(string, string);
 GLuint compileShader(string, GLenum);
 GLuint linkShader(GLuint, GLuint);
-void createMesh(Mesh &);
-void updateMesh(Mesh &);
-void findAABB(Mesh &);
-void drawBox(vec3, vec3);
-void setTexture(GLuint &, int, const string, FREE_IMAGE_FORMAT);
 
 #endif

@@ -15,9 +15,8 @@ SRC_DIR=/Users/YJ-work/cpp/myGL_glfw/dudvWater/src
 
 all: main
 
-main: main.o common.o skybox.o water.o
+main: main.o common.o skybox.o water.o pool.o
 	$(CXX) $(LIBS) $^ -o $@
-	rm -f *.o
 
 main.o: $(SRC_DIR)/main.cpp
 	$(CXX) -c $(INCS) $^ -o $@
@@ -31,7 +30,14 @@ skybox.o: $(SRC_DIR)/skybox.cpp
 water.o: $(SRC_DIR)/water.cpp
 	$(CXX) -c $(INCS) $^ -o $@
 
-.PHONY: clean
+pool.o: $(SRC_DIR)/pool.cpp
+	$(CXX) -c $(INCS) $^ -o $@
 
-clean:
+
+.PHONY: cleanImg cleanObj
+
+cleanImg:
 	rm -vf main ./result/*
+
+cleanObj:
+	rm -vf *.o

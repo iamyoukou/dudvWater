@@ -1,13 +1,14 @@
 #include "common.h"
 #include "skybox.h"
 #include "water.h"
+#include "pool.h"
 
 GLFWwindow *window;
 Skybox *skybox;
 Water *water;
+Pool *pool;
 
 bool saveTrigger = false;
-int faceNumber;
 int frameNumber = 0;
 
 float verticalAngle = -2.46533f;
@@ -16,7 +17,6 @@ float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
 float nearPlane = 0.01f, farPlane = 2000.f;
-float dudvMove = 0.f;
 
 vec3 eyePoint = vec3(8.652440, 12.537420, -4.424253);
 vec3 eyeDirection =
@@ -30,48 +30,29 @@ mat4 model, view, projection;
 float verticalAngleReflect = 3.14 - verticalAngle;
 float horizontalAngleReflect = horizontalAngle;
 vec3 eyePointReflect = vec3(eyePoint.x, -eyePoint.y, eyePoint.z);
+mat4 reflectV;
 
 vec3 lightPosition = vec3(-5.f, 10.f, 5.f);
 vec3 lightColor = vec3(1.f, 1.f, 1.f);
 float lightPower = 12.f;
 
-vec3 materialDiffuse = vec3(0.1f, 0.1f, 0.1f);
-vec3 materialAmbient = vec3(0.1f, 0.1f, 0.1f);
-vec3 materialSpecular = vec3(1.f, 1.f, 1.f);
-
-GLint uniPoolM, uniPoolV, uniPoolP;
-GLint uniLightColor, uniLightPos, uniLightPower, uniLightDir;
-GLint uniDiffuse, uniAmbient, uniSpecular;
-GLint uniPoolTexBase;
-mat4 meshM, meshV, meshP;
-mat4 reflectV;
-GLuint shaderPool;
-GLuint tboPoolBase;
-
-Mesh pool;
-
 void computeMatricesFromInputs();
 void keyCallback(GLFWwindow *, int, int, int, int);
 void initGL();
 void initOther();
-void initShader();
 void initTexture();
 void initMatrix();
-void initUniform();
-void initMesh();
-void drawMesh();
 
 int main(int argc, char **argv) {
   initGL();
   initOther();
-  initShader();
-  initTexture();
-  initMatrix();
-  initUniform();
-  initMesh();
 
   skybox = new Skybox();
   water = new Water();
+  pool = new Pool("./mesh/pool.obj");
+
+  initTexture();
+  initMatrix();
 
   // a rough way to solve cursor position initialization problem
   // must call glfwPollEvents once to activate glfwSetCursorPos
@@ -96,13 +77,12 @@ int main(int argc, char **argv) {
     glDisable(GL_CLIP_DISTANCE1);
 
     vec4 clipPlane0 = vec4(0, 1, 0, -2.2);
-    glUseProgram(shaderPool);
-    GLuint uniClipPlane0 = myGetUniformLocation(shaderPool, "clipPlane0");
-    glUniform4fv(uniClipPlane0, 1, value_ptr(clipPlane0));
+    glUniform4fv(pool->uniClipPlane0, 1, value_ptr(clipPlane0));
 
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
-    drawMesh();
+    pool->draw(model, view, projection, eyePoint, lightColor, lightPosition, 13,
+               14);
 
     /* render to reflection texture */
     glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
@@ -114,16 +94,13 @@ int main(int argc, char **argv) {
     // for reflection texture,
     // the eye point and direction are symmetric to xz-plane
     // so we must change the view matrix for the scene
-    glUseProgram(shaderPool);
-    glUniformMatrix4fv(shaderPool, 1, GL_FALSE, value_ptr(reflectV));
-
     vec4 clipPlane1 = vec4(0, 1, 0, -3);
-    GLuint uniClipPlane1 = myGetUniformLocation(shaderPool, "clipPlane1");
-    glUniform4fv(uniClipPlane1, 1, value_ptr(clipPlane1));
+    glUniform4fv(pool->uniClipPlane1, 1, value_ptr(clipPlane1));
 
     // draw scene
     skybox->draw(model, reflectV, projection, eyePointReflect);
-    drawMesh();
+    pool->draw(model, reflectV, projection, eyePoint, lightColor, lightPosition,
+               13, 14);
 
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -132,12 +109,10 @@ int main(int argc, char **argv) {
     glDisable(GL_CLIP_DISTANCE1);
 
     // change back to the original view matrix
-    glUseProgram(shaderPool);
-    glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(meshV));
-
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
-    drawMesh();
+    pool->draw(model, view, projection, eyePoint, lightColor, lightPosition, 13,
+               14);
     water->draw(model, view, projection, eyePoint, lightColor, lightPosition);
 
     // refresh frame
@@ -167,6 +142,10 @@ int main(int argc, char **argv) {
   }
 
   glfwTerminate();
+
+  delete water;
+  delete pool;
+  delete skybox;
 
   // FreeImage library
   FreeImage_DeInitialise();
@@ -253,13 +232,6 @@ void computeMatricesFromInputs() {
   reflectV =
       lookAt(eyePointReflect, eyePointReflect + directionReflect, newUpReflect);
 
-  // update for pool
-  glUseProgram(shaderPool);
-  meshV = view;
-  meshP = projection;
-  glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(meshV));
-  glUniformMatrix4fv(uniPoolP, 1, GL_FALSE, value_ptr(meshP));
-
   // For the next frame, the "last time" will be "now"
   lastTime = currentTime;
 }
@@ -296,20 +268,6 @@ void keyCallback(GLFWwindow *keyWnd, int key, int scancode, int action,
       break;
     }
   }
-}
-
-void initMesh() {
-  // pool
-  pool = loadObj("./mesh/pool.obj");
-  createMesh(pool);
-}
-
-void drawMesh() {
-  /* Pool */
-  glUseProgram(shaderPool);
-  glUniform1i(uniPoolTexBase, 10); // change base color
-  glBindVertexArray(pool.vao);
-  glDrawArrays(GL_TRIANGLES, 0, pool.faces.size() * 3);
 }
 
 void initGL() {
@@ -369,51 +327,9 @@ void initMatrix() {
   view = lookAt(eyePoint, eyePoint + eyeDirection, up);
   projection = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,
                            nearPlane, farPlane);
-
-  // for main window
-  meshM = model;
-  meshV = view;
-  meshP = projection;
-}
-
-void initShader() {
-  // mesh
-  shaderPool = buildShader("./shader/vsPool.glsl", "./shader/fsPool.glsl");
 }
 
 void initTexture() {
-  // pool base texture
-  setTexture(tboPoolBase, 10, "./image/stone.png", FIF_PNG);
-}
-
-void initUniform() {
-  /* Pool */
-  glUseProgram(shaderPool);
-
-  // texture
-  uniPoolTexBase = myGetUniformLocation(shaderPool, "texBase");
-
-  // transform
-  uniPoolM = myGetUniformLocation(shaderPool, "M");
-  uniPoolV = myGetUniformLocation(shaderPool, "V");
-  uniPoolP = myGetUniformLocation(shaderPool, "P");
-
-  glUniformMatrix4fv(uniPoolM, 1, GL_FALSE, value_ptr(meshM));
-  glUniformMatrix4fv(uniPoolV, 1, GL_FALSE, value_ptr(meshV));
-  glUniformMatrix4fv(uniPoolP, 1, GL_FALSE, value_ptr(meshP));
-
-  // light
-  uniLightColor = myGetUniformLocation(shaderPool, "lightColor");
-  uniLightPos = myGetUniformLocation(shaderPool, "lightPos");
-  uniLightPower = myGetUniformLocation(shaderPool, "lightPower");
-  uniDiffuse = myGetUniformLocation(shaderPool, "diffuse");
-  uniAmbient = myGetUniformLocation(shaderPool, "ambient");
-  uniSpecular = myGetUniformLocation(shaderPool, "specular");
-
-  glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
-  glUniform3fv(uniLightPos, 1, value_ptr(lightPosition));
-  glUniform1f(uniLightPower, lightPower);
-  glUniform3fv(uniDiffuse, 1, value_ptr(materialDiffuse));
-  glUniform3fv(uniAmbient, 1, value_ptr(materialAmbient));
-  glUniform3fv(uniSpecular, 1, value_ptr(materialSpecular));
+  pool->setTexture(pool->tboBase, 13, "./image/stone.png", FIF_PNG);
+  pool->setTexture(pool->tboNormal, 14, "./image/stone.png", FIF_PNG);
 }
