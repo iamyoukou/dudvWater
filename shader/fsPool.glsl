@@ -42,12 +42,12 @@ vec3 getNormalFromMap()
 void main(){
     vec4 texColor = texture(texBase, uv) * 0.75;
 
-    // vec3 N = getNormalFromMap();
+    vec3 N = getNormalFromMap();
     vec3 L = normalize(lightPosition - worldPos);
     vec3 V = normalize(eyePoint - worldPos);
     vec3 H = normalize(L + V);
 
-    float ka = 0.5, kd = 1.0, ks = 0.0;
+    float ka = 0.5, kd = 1.0, ks = 0.2;
     float alpha = 20;
 
     outputColor = vec4(0);
@@ -58,8 +58,8 @@ void main(){
 
     float dist = length(L);
     float attenuation = 1.0 / (dist * dist);
-    float dc = max(dot(worldN, L), 0.0);
-    float sc = pow(max(dot(H, worldN), 0.0), alpha);
+    float dc = max(dot(N, L), 0.0);
+    float sc = pow(max(dot(H, N), 0.0), alpha);
 
     outputColor += ambient;
     outputColor += diffuse * dc * attenuation;

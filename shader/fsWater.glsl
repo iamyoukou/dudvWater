@@ -68,11 +68,11 @@ void main(){
 
     vec3 normal = getNormalFromMap(distortion);
 
-    vec3 viewVector = toCamera;
-    float refractiveFactor = dot(viewVector, vec3(0, 1, 0));
+    vec3 viewVector = normalize(toCamera);
+    float refractiveFactor = max(dot(viewVector, vec3(0, 1, 0)), 0.0);
     refractiveFactor = pow(refractiveFactor, 3.0);
 
-    vec3 reflectedLight = reflect(fromLightVector, normal);
+    // vec3 reflectedLight = reflect(fromLightVector, normal);
 
     vec3 halfway = normalize(-fromLightVector + viewVector);
     // float specular = max(dot(reflectedLight, viewVector), 0.0);

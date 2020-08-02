@@ -16,7 +16,7 @@ void main(){
     gl_Position = P * V * M * vec4( vtxCoord, 1.0 );
 
     // use clipping to get reflection and refraction texture
-    gl_ClipDistance[0] = -dot(M * vec4(vtxCoord, 1.0), clipPlane0);
+    gl_ClipDistance[0] = dot(M * vec4(vtxCoord, 1.0), clipPlane0);
     gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
 
     uv = vtxUv;

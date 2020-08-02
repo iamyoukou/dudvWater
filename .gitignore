@@ -2,3 +2,5 @@
 result/
 main
 *.o
+*.mp4
+palette.png

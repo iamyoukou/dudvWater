@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 
   skybox = new Skybox();
   water = new Water();
-  pool = new Pool("./mesh/pool.obj");
+  pool = new Pool("./mesh/terrain.obj");
   mesh = new Mesh("./mesh/cube.obj");
 
   initTexture();
@@ -81,17 +81,22 @@ int main(int argc, char **argv) {
     glEnable(GL_CLIP_DISTANCE0);
     glDisable(GL_CLIP_DISTANCE1);
 
-    vec4 clipPlane0 = vec4(0, 1, 0, -2.2);
+    vec4 clipPlane0 = vec4(0, -1, 0, Water::WATER_Y);
+    glUseProgram(pool->shader);
     glUniform4fv(pool->uniClipPlane0, 1, value_ptr(clipPlane0));
 
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
-    pool->draw(model, view, projection, eyePoint, lightColor, lightPosition, 13,
+
+    mat4 poolM = translate(mat4(1.f), vec3(0.f, 1.5f, 0.f));
+    poolM = scale(poolM, vec3(3.f, 3.f, 3.f));
+    pool->draw(poolM, view, projection, eyePoint, lightColor, lightPosition, 13,
                14);
 
-    mat4 meshM = translate(mat4(1.f), vec3(-2.f, 4.f, 0.f));
-    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 13,
-               14);
+    mat4 meshM = translate(mat4(1.f), vec3(-2.f, 4.f, -2.f));
+    meshM = scale(meshM, vec3(0.5f, 0.5f, 0.5f));
+    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 15,
+               16);
 
     /* render to reflection texture */
     glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
@@ -107,16 +112,16 @@ int main(int argc, char **argv) {
     // the eye point and direction are symmetric to xz-plane
     // so we must change the view matrix for the scene
     // note: plane (0, 1, 0, D) means plane y = -D, not y = D
-    vec4 clipPlane1 = vec4(0.f, 1.f, 0.f, -2.2f);
+    vec4 clipPlane1 = vec4(0.f, 1.f, 0.f, -(Water::WATER_Y) + 0.125f);
     glUseProgram(pool->shader);
     glUniform4fv(pool->uniClipPlane1, 1, value_ptr(clipPlane1));
 
     // draw scene
     skybox->draw(model, reflectV, projection, eyePointReflect);
-    pool->draw(model, reflectV, projection, eyePoint, lightColor, lightPosition,
+    pool->draw(poolM, reflectV, projection, eyePoint, lightColor, lightPosition,
                13, 14);
     mesh->draw(meshM, reflectV, projection, eyePoint, lightColor, lightPosition,
-               13, 14);
+               15, 16);
 
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -127,11 +132,11 @@ int main(int argc, char **argv) {
     // change back to the original view matrix
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
-    pool->draw(model, view, projection, eyePoint, lightColor, lightPosition, 13,
+    pool->draw(poolM, view, projection, eyePoint, lightColor, lightPosition, 13,
                14);
     water->draw(model, view, projection, eyePoint, lightColor, lightPosition);
-    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 13,
-               14);
+    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 15,
+               16);
 
     // refresh frame
     glfwSwapBuffers(window);
@@ -343,9 +348,13 @@ void initMatrix() {
 }
 
 void initTexture() {
-  pool->setTexture(pool->tboBase, 13, "./image/stone.png", FIF_PNG);
-  pool->setTexture(pool->tboNormal, 14, "./image/stone.png", FIF_PNG);
+  pool->setTexture(pool->tboBase, 13, "./image/ground_dirt_007_basecolor.jpg",
+                   FIF_JPEG);
+  pool->setTexture(pool->tboNormal, 14, "./image/ground_dirt_007_normal.jpg",
+                   FIF_JPEG);
 
-  pool->setTexture(pool->tboBase, 13, "./image/stone.png", FIF_PNG);
-  pool->setTexture(pool->tboNormal, 14, "./image/stone.png", FIF_PNG);
+  mesh->setTexture(mesh->tboBase, 15, "./image/stone_wall_basecolor.jpg",
+                   FIF_JPEG);
+  mesh->setTexture(mesh->tboNormal, 16, "./image/stone_wall_normal.jpg",
+                   FIF_JPEG);
 }
