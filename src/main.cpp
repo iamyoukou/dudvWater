@@ -7,19 +7,19 @@ GLFWwindow *window;
 Skybox *skybox;
 Water *water;
 Pool *pool;
-Mesh *mesh;
+Pool *mesh;
 
 bool saveTrigger = false;
 int frameNumber = 0;
 
-float verticalAngle = -2.46533f;
-float horizontalAngle = 6.27918f;
+float verticalAngle = -1.98947;
+float horizontalAngle = 4.70905;
 float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
 float nearPlane = 0.01f, farPlane = 2000.f;
 
-vec3 eyePoint = vec3(8.652440, 12.537420, -4.424253);
+vec3 eyePoint = vec3(-0.235574, 4.012722, -5.172266);
 vec3 eyeDirection =
     vec3(sin(verticalAngle) * cos(horizontalAngle), cos(verticalAngle),
          sin(verticalAngle) * sin(horizontalAngle));
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
   skybox = new Skybox();
   water = new Water();
   pool = new Pool("./mesh/terrain.obj");
-  mesh = new Mesh("./mesh/cube.obj");
+  mesh = new Pool("./mesh/cube.obj");
 
   initTexture();
   initMatrix();
@@ -85,6 +85,9 @@ int main(int argc, char **argv) {
     glUseProgram(pool->shader);
     glUniform4fv(pool->uniClipPlane0, 1, value_ptr(clipPlane0));
 
+    glUseProgram(mesh->shader);
+    glUniform4fv(mesh->uniClipPlane0, 1, value_ptr(clipPlane0));
+
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
 
@@ -93,8 +96,8 @@ int main(int argc, char **argv) {
     pool->draw(poolM, view, projection, eyePoint, lightColor, lightPosition, 13,
                14);
 
-    mat4 meshM = translate(mat4(1.f), vec3(-2.f, 4.f, -2.f));
-    meshM = scale(meshM, vec3(0.5f, 0.5f, 0.5f));
+    mat4 meshM = translate(mat4(1.f), vec3(-2.f, 2.1f, -2.f));
+    meshM = scale(meshM, vec3(0.25f, 0.25f, 0.25f));
     mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 15,
                16);
 
@@ -115,6 +118,9 @@ int main(int argc, char **argv) {
     vec4 clipPlane1 = vec4(0.f, 1.f, 0.f, -(Water::WATER_Y) + 0.125f);
     glUseProgram(pool->shader);
     glUniform4fv(pool->uniClipPlane1, 1, value_ptr(clipPlane1));
+
+    glUseProgram(mesh->shader);
+    glUniform4fv(mesh->uniClipPlane1, 1, value_ptr(clipPlane1));
 
     // draw scene
     skybox->draw(model, reflectV, projection, eyePointReflect);
@@ -353,8 +359,8 @@ void initTexture() {
   pool->setTexture(pool->tboNormal, 14, "./image/ground_dirt_007_normal.jpg",
                    FIF_JPEG);
 
-  mesh->setTexture(mesh->tboBase, 15, "./image/stone_wall_basecolor.jpg",
+  mesh->setTexture(mesh->tboBase, 15, "./image/wood_plancks_004_basecolor.jpg",
                    FIF_JPEG);
-  mesh->setTexture(mesh->tboNormal, 16, "./image/stone_wall_normal.jpg",
+  mesh->setTexture(mesh->tboNormal, 16, "./image/wood_plancks_004_normal.jpg",
                    FIF_JPEG);
 }
