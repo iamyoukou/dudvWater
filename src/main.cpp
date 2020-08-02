@@ -28,9 +28,9 @@ vec3 up = vec3(0.f, 1.f, 0.f);
 mat4 model, view, projection;
 
 // for reflection texture
-float verticalAngleReflect = 3.14 - verticalAngle;
-float horizontalAngleReflect = horizontalAngle;
-vec3 eyePointReflect = vec3(eyePoint.x, -eyePoint.y, eyePoint.z);
+float verticalAngleReflect;
+float horizontalAngleReflect;
+vec3 eyePointReflect;
 mat4 reflectV;
 
 vec3 lightPosition = vec3(-5.f, 10.f, 5.f);
@@ -72,25 +72,26 @@ int main(int argc, char **argv) {
     computeMatricesFromInputs();
 
     /* render to refraction texture */
-    // glBindFramebuffer(GL_FRAMEBUFFER, water->fboRefract);
+    glBindFramebuffer(GL_FRAMEBUFFER, water->fboRefract);
+    // for user-defined framebuffer,
+    // must clear the depth buffer before rendering to enable depth test
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     // clipping
-    // glEnable(GL_CLIP_DISTANCE0);
-    // glDisable(GL_CLIP_DISTANCE1);
-    //
-    // vec4 clipPlane0 = vec4(0, 1, 0, -2.2);
-    // glUniform4fv(pool->uniClipPlane0, 1, value_ptr(clipPlane0));
-    //
-    // // draw scene
-    // skybox->draw(model, view, projection, eyePoint);
-    // pool->draw(model, view, projection, eyePoint, lightColor, lightPosition,
-    // 13,
-    //            14);
-    //
-    mat4 meshM = translate(mat4(1.f), vec3(0, 6.f, 0));
-    // mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition,
-    // 13,
-    //            14);
+    glEnable(GL_CLIP_DISTANCE0);
+    glDisable(GL_CLIP_DISTANCE1);
+
+    vec4 clipPlane0 = vec4(0, 1, 0, -2.2);
+    glUniform4fv(pool->uniClipPlane0, 1, value_ptr(clipPlane0));
+
+    // draw scene
+    skybox->draw(model, view, projection, eyePoint);
+    pool->draw(model, view, projection, eyePoint, lightColor, lightPosition, 13,
+               14);
+
+    mat4 meshM = translate(mat4(1.f), vec3(-2.f, 4.f, 0.f));
+    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 13,
+               14);
 
     /* render to reflection texture */
     glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
@@ -106,7 +107,7 @@ int main(int argc, char **argv) {
     // the eye point and direction are symmetric to xz-plane
     // so we must change the view matrix for the scene
     // note: plane (0, 1, 0, D) means plane y = -D, not y = D
-    vec4 clipPlane1 = vec4(0, 1, 0, -3);
+    vec4 clipPlane1 = vec4(0.f, 1.f, 0.f, -2.2f);
     glUseProgram(pool->shader);
     glUniform4fv(pool->uniClipPlane1, 1, value_ptr(clipPlane1));
 
@@ -191,8 +192,8 @@ void computeMatricesFromInputs() {
   horizontalAngle += mouseSpeed * float(xpos - WINDOW_WIDTH / 2.f);
   verticalAngle += mouseSpeed * float(-ypos + WINDOW_HEIGHT / 2.f);
 
-  horizontalAngleReflect += mouseSpeed * float(xpos - WINDOW_WIDTH / 2.f);
-  verticalAngleReflect += mouseSpeed * float(-ypos + WINDOW_HEIGHT / 2.f);
+  horizontalAngleReflect = horizontalAngle;
+  verticalAngleReflect = 3.1415f - verticalAngle;
 
   // Direction : Spherical coordinates to Cartesian coordinates conversion
   vec3 direction =
@@ -219,27 +220,22 @@ void computeMatricesFromInputs() {
   // Move forward
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
     eyePoint += direction * deltaTime * speed;
-
-    eyePointReflect += directionReflect * deltaTime * speed;
   }
   // Move backward
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
     eyePoint -= direction * deltaTime * speed;
-
-    eyePointReflect -= directionReflect * deltaTime * speed;
   }
   // Strafe right
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
     eyePoint += right * deltaTime * speed;
-
-    eyePointReflect += rightReflect * deltaTime * speed;
   }
   // Strafe left
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
     eyePoint -= right * deltaTime * speed;
-
-    eyePointReflect -= rightReflect * deltaTime * speed;
   }
+
+  float dist = 2.f * (eyePoint.y - Water::WATER_Y);
+  eyePointReflect = vec3(eyePoint.x, eyePoint.y - dist, eyePoint.z);
 
   view = lookAt(eyePoint, eyePoint + direction, newUp);
   projection = perspective(initialFoV, 1.f * WINDOW_WIDTH / WINDOW_HEIGHT,

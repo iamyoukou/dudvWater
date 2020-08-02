@@ -54,7 +54,7 @@ not the difference between the original plane and the distorted one.
 
 The reflection and refraction textures are faked by a technique called [user-defined clip plane](https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#User-defined_clipping).
 
-We specify a plane `(A, B, C, D)`, with `(A, B, C)` being its normal and `D` being its distance to `(0, 0, 0)`.
+We specify a plane `(A, B, C, D)`, with `(A, B, C)` being its normal and `-D` being its distance to `(0, 0, 0)`.
 For a point `P` in the space, `dot(P, plane)` gives the relationship between `P` and `plane`.
 Here, `P` is expanded to `vec4` with `w = 1`.
 
@@ -65,37 +65,36 @@ dot(P, plane) < 0 --> negative side of the plane --> outside clipping space
 
 Points on the negative side of the plane will not be rendered.
 
-For example, in this program, I define a clip plane for refraction texture as following:
+For example, plane `(0, 1, 0, -2)` represents a plane that its normal is `(0, 1, 0)`
+and its distance to the origin is `2` (i.e. `y = 2`).
+Only vertices whose `position.y >= 2` within the viewport frustum will be rendered.
 
 ![clipPlane](./image/clipPlane.png)
 
-and in vertex shader:
+# Eye point for reflection
 
-```
-gl_ClipDistance[0] = -dot(M * vec4(vtxCoord, 1.0), clipPlane0);
-```
-
-This operation makes points under `plane0` be inside the clipping space,
-and we get a faked underwater scene.
-
-For the reflection texture, `plane1 = vec4(0, 1, 0, -3)` is defined, and
-
-```
-gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
-```
-
-is executed.
-This makes points over `plane1` be inside the clipping space,
-and we get a faked overwater scene.
-
-# Note
+Before rendering the reflection texture,
+don't forget to change the eye point.
 
 ![twoEyepoints](./image/twoEyepoints.png)
 
-As shown in the image,
-we use a symmetric eye point and eye direction when calculating the reflection.
-So don't forget to change the view matrix before rendering the reflection texture,
-and change it back once you finish.
+First, move the eye point to the symmetric position of the water surface by
+
+```
+float d = 2.0 * (eyePoint.y - waterSurface.y);
+vec3 eyePointReflect = vec3(eyePoint.x, eyePoint.y - d, eyePoint.z);
+```
+
+Second, change the viewing angle.
+This is based on what coordinate system you use.
+For example, if you use the one in the image, you should do something like
+
+```
+float thetaReflect = 3.1415f - theta;
+```
+
+Finally, don't forget to change the eye point back after rendering.
+
 
 # Problem
 

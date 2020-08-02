@@ -5,8 +5,8 @@
 
 class Water {
 public:
-  const float WATER_SIZE = 3.8f;
-  const float WATER_Y = 2.2f;
+  static const float WATER_SIZE;
+  static const float WATER_Y;
   float dudvMove = 0.f;
 
   GLfloat vtxs[48] = {
@@ -30,7 +30,7 @@ public:
   GLuint shader;
   GLuint tboRefract, tboReflect;
   GLuint fboRefract, fboReflect;
-  GLuint rboDepthReflect;
+  GLuint rboDepthRefract, rboDepthReflect;
 
   Water();
   ~Water();

@@ -17,7 +17,7 @@ uniform vec3 lightColor;
 
 out vec4 outputColor;
 
-const float alpha = 0.0002;
+const float alpha = 0.02;
 const float shineDamper = 30.0;
 const float reflectivity = 3.0;
 
@@ -82,6 +82,4 @@ void main(){
 
     outputColor = mix(colorReflection, colorRefraction, refractiveFactor);
     outputColor = mix(outputColor, vec4(0.0, 0.0, 0.1, 1.0) + vec4(specularHighlight, 0), 0.1);
-
-    outputColor = colorReflection;
 }

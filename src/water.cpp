@@ -1,6 +1,9 @@
 #include "common.h"
 #include "water.h"
 
+const float Water::WATER_SIZE = 3.8f;
+const float Water::WATER_Y = 2.2f;
+
 Water::Water() {
   initShader();
   initBuffer();
@@ -143,8 +146,17 @@ void Water::initRefract() {
                GL_RGB, GL_UNSIGNED_BYTE, 0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, tboRefract, 0);
+
+  // The depth buffer
+  // User-defined framebuffer must have a depth buffer to enable depth test
+  glGenRenderbuffers(1, &rboDepthRefract);
+  glBindRenderbuffer(GL_RENDERBUFFER, rboDepthRefract);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH * 2,
+                        WINDOW_HEIGHT * 2);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                            GL_RENDERBUFFER, rboDepthRefract);
+
   glDrawBuffer(GL_COLOR_ATTACHMENT1);
 }
 
