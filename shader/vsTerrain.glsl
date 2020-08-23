@@ -9,12 +9,13 @@ out vec3 worldPos;
 out vec3 worldN;
 
 uniform mat4 M, V, P;
-uniform vec4 clipPlane0, clipPlane1;
+// uniform vec4 clipPlane0, clipPlane1;
 
 void main() {
-  // use clipping to get reflection and refraction texture
-  gl_ClipDistance[0] = dot(M * vec4(vtxCoord, 1.0), clipPlane0);
-  gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
+  // NOTE: if tessellation is enabled,
+  // the following gl_ClipDistance must be placed in TES
+  // gl_ClipDistance[0] = dot(M * vec4(vtxCoord, 1.0), clipPlane0);
+  // gl_ClipDistance[1] = dot(M * vec4(vtxCoord, 1.0), clipPlane1);
 
   uv = vtxUv;
 

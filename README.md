@@ -3,7 +3,7 @@
 From puddles to ponds, we can see ripples everywhere in the real world.
 Their change in the height can be ignored even we change our view point.
 This method is suitable for simulating those ripples,
-and it is used widely in video games (e.g. *Dark Souls*).
+and it is used widely in video games (e.g. _Dark Souls_).
 
 I implement this method based on the video of [ThinMatrix](https://www.youtube.com/watch?v=HusvGeEDU_U&list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh) and the paper of [Rene Truelsen](http://image.diku.dk/projects/media/rene.truelsen.07.pdf).
 
@@ -58,10 +58,8 @@ We specify a plane `(A, B, C, D)`, with `(A, B, C)` being its normal and `-D` be
 For a point `P` in the space, `dot(P, plane)` gives the relationship between `P` and `plane`.
 Here, `P` is expanded to `vec4` with `w = 1`.
 
-```
-dot(P, plane) >= 0 --> non-negative side of the plane --> inside clipping space
-dot(P, plane) < 0 --> negative side of the plane --> outside clipping space
-```
+    dot(P, plane) >= 0 --> non-negative side of the plane --> inside clipping space
+    dot(P, plane) < 0 --> negative side of the plane --> outside clipping space
 
 Points on the negative side of the plane will not be rendered.
 
@@ -80,23 +78,18 @@ don't forget to change the eye point.
 
 First, move the eye point to the symmetric position of the water surface by
 
-```
-float d = 2.0 * (eyePoint.y - waterSurface.y);
-vec3 eyePointReflect = vec3(eyePoint.x, eyePoint.y - d, eyePoint.z);
-```
+    float d = 2.0 * (eyePoint.y - waterSurface.y);
+    vec3 eyePointReflect = vec3(eyePoint.x, eyePoint.y - d, eyePoint.z);
 
 Second, change the viewing angle.
 This is based on what coordinate system you use.
 For example, if you use the one in the image, you should do something like
 
-```
-float thetaReflect = 3.1415f - theta;
-```
+    float thetaReflect = 3.1415f - theta;
 
 Finally, don't forget to change the eye point back after rendering.
 
-
-# Problem
+# Performance
 
 Currently, this program renders the same scene `three` times per frame.
 One for the reflection frame buffer, one for the refraction frame buffer,
@@ -106,7 +99,8 @@ This may not be a problem for simple scenes.
 However, video games always have complex scenes,
 and rendering such scenes `three` times per frame is too expensive.
 
-I will try to fix this problem in the future.
+An effective way to improve performance is using level of detail (LOD) technique.
+For example, using a height map and an LOD tessellation shader for rendering terrain.
 
 # Result
 

@@ -1,24 +1,25 @@
 #include "common.h"
 #include "skybox.h"
 #include "water.h"
+#include "terrain.h"
 
 GLFWwindow *window;
 Skybox *skybox;
 Water *water;
-Mesh *terrain;
+Terrain *terrain;
 Mesh *box;
 
 bool saveTrigger = false;
 int frameNumber = 0;
 
-float verticalAngle = -1.98947;
-float horizontalAngle = 4.70905;
+float verticalAngle = -2.00731;
+float horizontalAngle = 3.11357;
 float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
 float nearPlane = 0.01f, farPlane = 2000.f;
 
-vec3 eyePoint = vec3(-0.235574, 4.012722, -5.172266);
+vec3 eyePoint = vec3(-12.896165, 6.112105, 0.729217);
 vec3 eyeDirection =
     vec3(sin(verticalAngle) * cos(horizontalAngle), cos(verticalAngle),
          sin(verticalAngle) * sin(horizontalAngle));
@@ -49,7 +50,7 @@ int main(int argc, char **argv) {
 
   skybox = new Skybox();
   water = new Water();
-  terrain = new Mesh("./mesh/terrain.obj", true);
+  terrain = new Terrain("./mesh/gridQuad.obj");
   box = new Mesh("./mesh/cube.obj", true);
 
   initTexture();
@@ -91,14 +92,15 @@ int main(int argc, char **argv) {
     skybox->draw(model, view, projection, eyePoint);
 
     mat4 terrainM = translate(mat4(1.f), vec3(0.f, 1.5f, 0.f));
-    terrainM = scale(terrainM, vec3(3.f, 3.f, 3.f));
+    terrainM = scale(terrainM, vec3(8.f, 8.f, 8.f));
     terrain->draw(terrainM, view, projection, eyePoint, lightColor,
-                  lightPosition, 13, 14);
+                  lightPosition, 12, 13, 14);
 
-    mat4 boxM = translate(mat4(1.f), vec3(-2.f, 2.1f, -2.f));
-    boxM = scale(boxM, vec3(0.25f, 0.25f, 0.25f));
-    box->draw(boxM, view, projection, eyePoint, lightColor, lightPosition, 15,
-              16);
+    // mat4 boxM = translate(mat4(1.f), vec3(-8.f, 2.1f, -8.f));
+    // boxM = scale(boxM, vec3(0.25f, 0.25f, 0.25f));
+    // box->draw(boxM, view, projection, eyePoint, lightColor, lightPosition,
+    // 15,
+    //           16);
 
     /* render to reflection texture */
     glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
@@ -131,11 +133,12 @@ int main(int argc, char **argv) {
     // Therefore, only disable culling face when drawing terrain.
     glDisable(GL_CULL_FACE);
     terrain->draw(terrainM, reflectV, projection, eyePoint, lightColor,
-                  lightPosition, 13, 14);
+                  lightPosition, 12, 13, 14);
     glEnable(GL_CULL_FACE);
 
-    box->draw(boxM, reflectV, projection, eyePoint, lightColor, lightPosition,
-              15, 16);
+    // box->draw(boxM, reflectV, projection, eyePoint, lightColor,
+    // lightPosition,
+    //           15, 16);
 
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -147,10 +150,11 @@ int main(int argc, char **argv) {
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
     terrain->draw(terrainM, view, projection, eyePoint, lightColor,
-                  lightPosition, 13, 14);
+                  lightPosition, 12, 13, 14);
     water->draw(model, view, projection, eyePoint, lightColor, lightPosition);
-    box->draw(boxM, view, projection, eyePoint, lightColor, lightPosition, 15,
-              16);
+    // box->draw(boxM, view, projection, eyePoint, lightColor, lightPosition,
+    // 15,
+    //           16);
 
     // refresh frame
     glfwSwapBuffers(window);
@@ -347,6 +351,8 @@ void initGL() {
 
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST); // must enable depth test!!
+
+  glPatchParameteri(GL_PATCH_VERTICES, 4);
 }
 
 void initOther() {
@@ -362,10 +368,11 @@ void initMatrix() {
 }
 
 void initTexture() {
-  terrain->setTexture(terrain->tboBase, 13,
+  terrain->setTexture(terrain->tboBase, 12,
                       "./image/ground_dirt_007_basecolor.jpg", FIF_JPEG);
-  terrain->setTexture(terrain->tboNormal, 14,
+  terrain->setTexture(terrain->tboNormal, 13,
                       "./image/ground_dirt_007_normal.jpg", FIF_JPEG);
+  terrain->setTexture(terrain->tboNormal, 14, "./image/height.png", FIF_PNG);
 
   box->setTexture(box->tboBase, 15, "./image/wood_plancks_004_basecolor.jpg",
                   FIF_JPEG);

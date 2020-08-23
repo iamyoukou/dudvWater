@@ -12,21 +12,24 @@ out vec3 esInWorldPos[];
 out vec2 esInUv[];
 out vec3 esInN[];
 
+float baseDist = 4.0;
+float baseLevel = 8.0;
+
 float getTessLevel(float dist0, float dist1) {
   float avgDist = (dist0 + dist1) / 2.0;
 
-  if (avgDist <= 2.0) {
-    return 32.0;
-  } else if (avgDist <= 4.0) {
-    return 16.0;
-  } else if (avgDist <= 8.0) {
-    return 8.0;
-  } else if (avgDist <= 16.0) {
-    return 4.0;
-  } else if (avgDist <= 32.0) {
-    return 2.0;
+  if (avgDist <= baseDist) {
+    return baseLevel * 32.0;
+  } else if (avgDist <= baseDist * 2.0) {
+    return baseLevel * 16.0;
+  } else if (avgDist <= baseDist * 4.0) {
+    return baseLevel * 8.0;
+  } else if (avgDist <= baseDist * 8.0) {
+    return baseLevel * 4.0;
+  } else if (avgDist <= baseDist * 16.0) {
+    return baseLevel * 2.0;
   } else {
-    return 1.0;
+    return baseLevel;
   }
 }
 

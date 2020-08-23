@@ -1,7 +1,7 @@
 #include "common.h"
 #include "water.h"
 
-const float Water::WATER_SIZE = 3.8f;
+const float Water::WATER_SIZE = 10.f;
 const float Water::WATER_Y = 2.2f;
 
 Water::Water() {
