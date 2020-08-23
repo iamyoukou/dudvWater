@@ -149,17 +149,21 @@ GLint myGetUniformLocation(GLuint &prog, string name) {
 Mesh::Mesh(const string fileName, bool reflect) {
   isReflect = reflect;
 
-  loadObj(fileName);
+  // import mesh by assimp
+  scene = importer.ReadFile(fileName, aiProcess_CalcTangentSpace);
+
   initBuffers();
   initShader();
   initUniform();
 }
 
 Mesh::~Mesh() {
-  glDeleteBuffers(1, &vboVtxs);
-  glDeleteBuffers(1, &vboUvs);
-  glDeleteBuffers(1, &vboNormals);
-  glDeleteVertexArrays(1, &vao);
+  for (size_t i = 0; i < scene->mNumMeshes; i++) {
+    glDeleteBuffers(1, &vboVtxs[i]);
+    glDeleteBuffers(1, &vboUvs[i]);
+    glDeleteBuffers(1, &vboNmls[i]);
+    glDeleteVertexArrays(1, &vaos[i]);
+  }
 }
 
 void Mesh::initShader() {
@@ -193,185 +197,74 @@ void Mesh::initUniform() {
   }
 }
 
-void Mesh::loadObj(const string fileName) {
-  std::ifstream fin;
-  fin.open(fileName.c_str());
-
-  if (!(fin.good())) {
-    std::cout << "failed to open file : " << fileName << std::endl;
-  }
-
-  while (fin.peek() != EOF) { // read obj loop
-    std::string s;
-    fin >> s;
-
-    // vertex coordinate
-    if ("v" == s) {
-      float x, y, z;
-      fin >> x;
-      fin >> y;
-      fin >> z;
-      vertices.push_back(glm::vec3(x, y, z));
-    }
-    // texture coordinate
-    else if ("vt" == s) {
-      float u, v;
-      fin >> u;
-      fin >> v;
-      uvs.push_back(glm::vec2(u, v));
-    }
-    // face normal (recorded as vn in obj file)
-    else if ("vn" == s) {
-      float x, y, z;
-      fin >> x;
-      fin >> y;
-      fin >> z;
-      faceNormals.push_back(glm::vec3(x, y, z));
-    }
-    // vertices contained in face, and face normal
-    else if ("f" == s) {
-      Face f;
-
-      // v1/vt1/vn1
-      fin >> f.v1;
-      fin.ignore(1);
-      fin >> f.vt1;
-      fin.ignore(1);
-      fin >> f.vn1;
-
-      // v2/vt2/vn2
-      fin >> f.v2;
-      fin.ignore(1);
-      fin >> f.vt2;
-      fin.ignore(1);
-      fin >> f.vn2;
-
-      // v3/vt3/vn3
-      fin >> f.v3;
-      fin.ignore(1);
-      fin >> f.vt3;
-      fin.ignore(1);
-      fin >> f.vn3;
-
-      // Note:
-      //  v, vt, vn in "v/vt/vn" start from 1,
-      //  but indices of std::vector start from 0,
-      //  so we need minus 1 for all elements
-      f.v1 -= 1;
-      f.vt1 -= 1;
-      f.vn1 -= 1;
-
-      f.v2 -= 1;
-      f.vt2 -= 1;
-      f.vn2 -= 1;
-
-      f.v3 -= 1;
-      f.vt3 -= 1;
-      f.vn3 -= 1;
-
-      faces.push_back(f);
-    } else {
-      continue;
-    }
-  } // end read obj loop
-
-  fin.close();
-}
-
 void Mesh::initBuffers() {
-  // write vertex coordinate to array
-  int nOfFaces = faces.size();
+  // for each mesh
+  for (size_t i = 0; i < scene->mNumMeshes; i++) {
+    const aiMesh *mesh = scene->mMeshes[i];
+    int numVtxs = mesh->mNumVertices;
 
-  // 3 vertices per face, 3 float per vertex coord, 2 float per tex coord
-  GLfloat *aVtxCoords = new GLfloat[nOfFaces * 3 * 3];
-  GLfloat *aUvs = new GLfloat[nOfFaces * 3 * 2];
-  GLfloat *aNormals = new GLfloat[nOfFaces * 3 * 3];
+    // numVertices * numComponents
+    GLfloat *aVtxCoords = new GLfloat[numVtxs * 3];
+    GLfloat *aUvs = new GLfloat[numVtxs * 2];
+    GLfloat *aNormals = new GLfloat[numVtxs * 3];
 
-  for (size_t i = 0; i < nOfFaces; i++) {
-    // vertex 1
-    int vtxIdx = faces[i].v1;
-    aVtxCoords[i * 9 + 0] = vertices[vtxIdx].x;
-    aVtxCoords[i * 9 + 1] = vertices[vtxIdx].y;
-    aVtxCoords[i * 9 + 2] = vertices[vtxIdx].z;
+    for (size_t j = 0; j < numVtxs; j++) {
+      aiVector3D &vtx = mesh->mVertices[j];
+      aVtxCoords[j * 3 + 0] = vtx.x;
+      aVtxCoords[j * 3 + 1] = vtx.y;
+      aVtxCoords[j * 3 + 2] = vtx.z;
 
-    // normal for vertex 1
-    int nmlIdx = faces[i].vn1;
-    aNormals[i * 9 + 0] = faceNormals[nmlIdx].x;
-    aNormals[i * 9 + 1] = faceNormals[nmlIdx].y;
-    aNormals[i * 9 + 2] = faceNormals[nmlIdx].z;
+      aiVector3D &nml = mesh->mNormals[j];
+      aNormals[j * 3 + 0] = nml.x;
+      aNormals[j * 3 + 1] = nml.y;
+      aNormals[j * 3 + 2] = nml.z;
 
-    // uv for vertex 1
-    int uvIdx = faces[i].vt1;
-    aUvs[i * 6 + 0] = uvs[uvIdx].x;
-    aUvs[i * 6 + 1] = uvs[uvIdx].y;
+      aiVector3D &uv = mesh->mTextureCoords[0][j];
+      aUvs[j * 2 + 0] = uv.x;
+      aUvs[j * 2 + 1] = uv.y;
+    }
 
-    // vertex 2
-    vtxIdx = faces[i].v2;
-    aVtxCoords[i * 9 + 3] = vertices[vtxIdx].x;
-    aVtxCoords[i * 9 + 4] = vertices[vtxIdx].y;
-    aVtxCoords[i * 9 + 5] = vertices[vtxIdx].z;
+    // vao
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    vaos.push_back(vao);
 
-    // normal for vertex 2
-    nmlIdx = faces[i].vn2;
-    aNormals[i * 9 + 3] = faceNormals[nmlIdx].x;
-    aNormals[i * 9 + 4] = faceNormals[nmlIdx].y;
-    aNormals[i * 9 + 5] = faceNormals[nmlIdx].z;
+    // vbo for vertex
+    GLuint vboVtx;
+    glGenBuffers(1, &vboVtx);
+    glBindBuffer(GL_ARRAY_BUFFER, vboVtx);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVtxs * 3, aVtxCoords,
+                 GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    vboVtxs.push_back(vboVtx);
 
-    // uv for vertex 2
-    uvIdx = faces[i].vt2;
-    aUvs[i * 6 + 2] = uvs[uvIdx].x;
-    aUvs[i * 6 + 3] = uvs[uvIdx].y;
+    // vbo for uv
+    GLuint vboUv;
+    glGenBuffers(1, &vboUv);
+    glBindBuffer(GL_ARRAY_BUFFER, vboUv);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVtxs * 2, aUvs,
+                 GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+    vboUvs.push_back(vboUv);
 
-    // vertex 3
-    vtxIdx = faces[i].v3;
-    aVtxCoords[i * 9 + 6] = vertices[vtxIdx].x;
-    aVtxCoords[i * 9 + 7] = vertices[vtxIdx].y;
-    aVtxCoords[i * 9 + 8] = vertices[vtxIdx].z;
+    // vbo for normal
+    GLuint vboNml;
+    glGenBuffers(1, &vboNml);
+    glBindBuffer(GL_ARRAY_BUFFER, vboNml);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * numVtxs * 3, aNormals,
+                 GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(2);
+    vboNmls.push_back(vboNml);
 
-    // normal for vertex 3
-    nmlIdx = faces[i].vn3;
-    aNormals[i * 9 + 6] = faceNormals[nmlIdx].x;
-    aNormals[i * 9 + 7] = faceNormals[nmlIdx].y;
-    aNormals[i * 9 + 8] = faceNormals[nmlIdx].z;
-
-    // uv for vertex 3
-    uvIdx = faces[i].vt3;
-    aUvs[i * 6 + 4] = uvs[uvIdx].x;
-    aUvs[i * 6 + 5] = uvs[uvIdx].y;
-  }
-
-  // vao
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
-
-  // vbo for vertex
-  glGenBuffers(1, &vboVtxs);
-  glBindBuffer(GL_ARRAY_BUFFER, vboVtxs);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * nOfFaces * 3 * 3, aVtxCoords,
-               GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(0);
-
-  // vbo for texture
-  glGenBuffers(1, &vboUvs);
-  glBindBuffer(GL_ARRAY_BUFFER, vboUvs);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * nOfFaces * 3 * 2, aUvs,
-               GL_STATIC_DRAW);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(1);
-
-  // vbo for normal
-  glGenBuffers(1, &vboNormals);
-  glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * nOfFaces * 3 * 3, aNormals,
-               GL_STATIC_DRAW);
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(2);
-
-  // delete client data
-  delete[] aVtxCoords;
-  delete[] aUvs;
-  delete[] aNormals;
+    // delete client data
+    delete[] aVtxCoords;
+    delete[] aUvs;
+    delete[] aNormals;
+  } // end for each mesh
 }
 
 void Mesh::setTexture(GLuint &tbo, int texUnit, const string texDir,
@@ -408,39 +301,43 @@ void Mesh::draw(mat4 M, mat4 V, mat4 P, vec3 eye, vec3 lightColor,
   glUniform1i(uniTexBase, unitBaseColor); // change base color
   glUniform1i(uniTexNormal, unitNormal);  // change normal
 
-  glBindVertexArray(vao);
-  glDrawArrays(GL_TRIANGLES, 0, faces.size() * 3);
-}
+  for (size_t i = 0; i < scene->mNumMeshes; i++) {
+    int numVtxs = scene->mMeshes[i]->mNumVertices;
 
-void Mesh::translate(glm::vec3 xyz) {
-  // move each vertex with xyz
-  for (size_t i = 0; i < vertices.size(); i++) {
-    vertices[i] += xyz;
+    glBindVertexArray(vaos[i]);
+    glDrawArrays(GL_TRIANGLES, 0, numVtxs);
   }
-
-  // update aabb
-  min += xyz;
-  max += xyz;
 }
 
-void Mesh::scale(glm::vec3 xyz) {
-  // scale each vertex with xyz
-  for (size_t i = 0; i < vertices.size(); i++) {
-    vertices[i].x *= xyz.x;
-    vertices[i].y *= xyz.y;
-    vertices[i].z *= xyz.z;
-  }
+// void Mesh::translate(glm::vec3 xyz) {
+//   // move each vertex with xyz
+//   for (size_t i = 0; i < vertices.size(); i++) {
+//     vertices[i] += xyz;
+//   }
+//
+//   // update aabb
+//   min += xyz;
+//   max += xyz;
+// }
 
-  // update aabb
-  min.x *= xyz.x;
-  min.y *= xyz.y;
-  min.z *= xyz.z;
-
-  max.x *= xyz.x;
-  max.y *= xyz.y;
-  max.z *= xyz.z;
-}
+// void Mesh::scale(glm::vec3 xyz) {
+//   // scale each vertex with xyz
+//   for (size_t i = 0; i < vertices.size(); i++) {
+//     vertices[i].x *= xyz.x;
+//     vertices[i].y *= xyz.y;
+//     vertices[i].z *= xyz.z;
+//   }
+//
+//   // update aabb
+//   min.x *= xyz.x;
+//   min.y *= xyz.y;
+//   min.z *= xyz.z;
+//
+//   max.x *= xyz.x;
+//   max.y *= xyz.y;
+//   max.z *= xyz.z;
+// }
 
 // rotate mesh along x, y, z axes
 // xyz specifies the rotated angle along each axis
-void Mesh::rotate(glm::vec3 xyz) {}
+// void Mesh::rotate(glm::vec3 xyz) {}
