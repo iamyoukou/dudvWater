@@ -39,7 +39,7 @@ terrain.o: $(SRC_DIR)/terrain.cpp
 .PHONY: cleanImg cleanObj
 
 cleanImg:
-	rm -vf main ./result/*
+	rm -vf ./result/*
 
 cleanObj:
 	rm -vf *.o

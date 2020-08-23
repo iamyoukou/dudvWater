@@ -38,7 +38,10 @@ vec3 getNormalFromMap() {
 }
 
 void main() {
-  vec4 texColor = texture(texBase, uv) * 0.75;
+  // tiling uv
+  // the terrain grid is 4x4
+  vec2 tempUv = mod(uv * 4.0, 1.0);
+  vec4 texColor = texture(texBase, tempUv) * 0.75;
 
   vec3 N = getNormalFromMap();
   vec3 L = normalize(lightPosition - worldPos);
