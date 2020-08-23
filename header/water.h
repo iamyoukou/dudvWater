@@ -7,7 +7,7 @@ class Water {
 public:
   static const float WATER_SIZE;
   static const float WATER_Y;
-  float dudvMove = 0.f;
+  static float dudvMove;
 
   GLfloat vtxs[48] = {
       // coords

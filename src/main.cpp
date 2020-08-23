@@ -12,14 +12,14 @@ Mesh *box;
 bool saveTrigger = false;
 int frameNumber = 0;
 
-float verticalAngle = -2.00731;
-float horizontalAngle = 3.11357;
+float verticalAngle = -1.85176;
+float horizontalAngle = 3.02591;
 float initialFoV = 45.0f;
 float speed = 5.0f;
 float mouseSpeed = 0.005f;
 float nearPlane = 0.01f, farPlane = 2000.f;
 
-vec3 eyePoint = vec3(-12.896165, 6.112105, 0.729217);
+vec3 eyePoint = vec3(-0.538072, 4.445531, 14.041491);
 vec3 eyeDirection =
     vec3(sin(verticalAngle) * cos(horizontalAngle), cos(verticalAngle),
          sin(verticalAngle) * sin(horizontalAngle));
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
 
-    mat4 terrainM = translate(mat4(1.f), vec3(0.f, 1.5f, 0.f));
+    mat4 terrainM = translate(mat4(1.f), vec3(12.f, 1.5f, 12.f));
     terrainM = scale(terrainM, vec3(8.f, 8.f, 8.f));
     terrain->draw(terrainM, view, projection, eyePoint, lightColor,
                   lightPosition, 12, 13, 14);
@@ -151,7 +151,18 @@ int main(int argc, char **argv) {
     skybox->draw(model, view, projection, eyePoint);
     terrain->draw(terrainM, view, projection, eyePoint, lightColor,
                   lightPosition, 12, 13, 14);
-    water->draw(model, view, projection, eyePoint, lightColor, lightPosition);
+
+    // tiling
+    Water::dudvMove += 0.0005f; // speed
+    Water::dudvMove = fmod(Water::dudvMove, 1.0f);
+
+    for (size_t i = 0; i < 15; i++) {
+      for (size_t j = 0; j < 15; j++) {
+        mat4 tempM = translate(mat4(1.0), vec3(2.0f * i, 0, 2.0f * j));
+        water->draw(tempM, view, projection, eyePoint, lightColor,
+                    lightPosition);
+      }
+    }
     // box->draw(boxM, view, projection, eyePoint, lightColor, lightPosition,
     // 15,
     //           16);

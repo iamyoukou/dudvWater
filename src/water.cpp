@@ -1,8 +1,9 @@
 #include "common.h"
 #include "water.h"
 
-const float Water::WATER_SIZE = 10.f;
+const float Water::WATER_SIZE = 1.f;
 const float Water::WATER_Y = 2.2f;
+float Water::dudvMove = 0.f;
 
 Water::Water() {
   initShader();
@@ -18,9 +19,6 @@ Water::~Water() {}
 void Water::draw(mat4 M, mat4 V, mat4 P, vec3 eyePoint, vec3 lightColor,
                  vec3 lightPosition) {
   glUseProgram(shader);
-
-  dudvMove += 0.0005f; // speed
-  dudvMove = fmod(dudvMove, 1.0f);
 
   glUniform1f(uniDudvMove, dudvMove);
   glUniform3fv(uniCamCoord, 1, value_ptr(eyePoint));
