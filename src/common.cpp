@@ -12,8 +12,9 @@ std::string readFile(const std::string filename) {
 }
 
 // return a shader executable
-GLuint buildShader(string vsDir, string fsDir) {
-  GLuint vs, fs;
+GLuint buildShader(string vsDir, string fsDir, string tcsDir, string tesDir,
+                   string geoDir) {
+  GLuint vs, fs, tcs = 0, tes = 0, geo = 0;
   GLint linkOk;
   GLuint exeShader;
 
@@ -21,8 +22,19 @@ GLuint buildShader(string vsDir, string fsDir) {
   vs = compileShader(vsDir, GL_VERTEX_SHADER);
   fs = compileShader(fsDir, GL_FRAGMENT_SHADER);
 
+  // TCS, TES
+  if (tcsDir != "" && tesDir != "") {
+    tcs = compileShader(tcsDir, GL_TESS_CONTROL_SHADER);
+    tes = compileShader(tesDir, GL_TESS_EVALUATION_SHADER);
+  }
+
+  // GS
+  if (geoDir != "") {
+    geo = compileShader(geoDir, GL_GEOMETRY_SHADER);
+  }
+
   // link
-  exeShader = linkShader(vs, fs);
+  exeShader = linkShader(vs, fs, tcs, tes, geo);
 
   return exeShader;
 }
@@ -65,13 +77,24 @@ GLuint compileShader(string filename, GLenum type) {
   return objShader;
 }
 
-GLuint linkShader(GLuint vsObj, GLuint fsObj) {
+GLuint linkShader(GLuint vsObj, GLuint fsObj, GLuint tcsObj, GLuint tesObj,
+                  GLuint geoObj) {
   GLuint exe;
   GLint linkOk;
 
   exe = glCreateProgram();
   glAttachShader(exe, vsObj);
   glAttachShader(exe, fsObj);
+
+  if (tcsObj != 0 && tesObj != 0) {
+    glAttachShader(exe, tcsObj);
+    glAttachShader(exe, tesObj);
+  }
+
+  if (geoObj != 0) {
+    glAttachShader(exe, geoObj);
+  }
+
   glLinkProgram(exe);
 
   // check result
