@@ -45,14 +45,17 @@ public:
   GLint uniModel, uniView, uniProjection;
   GLint uniEyePoint, uniLightColor, uniLightPosition;
   GLint uniTexBase, uniTexNormal;
+  GLint uniClipPlane0, uniClipPlane1;
 
   // aabb
   vec3 min, max;
 
   mat4 model, view, projection;
 
+  bool isReflect;
+
   /* Constructors */
-  Mesh(const string);
+  Mesh(const string, bool = false);
   ~Mesh();
 
   /* Member functions */

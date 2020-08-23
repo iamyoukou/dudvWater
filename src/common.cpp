@@ -146,7 +146,9 @@ GLint myGetUniformLocation(GLuint &prog, string name) {
 }
 
 /* Mesh class */
-Mesh::Mesh(const string fileName) {
+Mesh::Mesh(const string fileName, bool reflect) {
+  isReflect = reflect;
+
   loadObj(fileName);
   initBuffers();
   initShader();
@@ -161,7 +163,18 @@ Mesh::~Mesh() {
 }
 
 void Mesh::initShader() {
-  shader = buildShader("./shader/vsPhong.glsl", "./shader/fsPhong.glsl");
+  string dir = "./shader/";
+  string vs, fs;
+
+  if (isReflect) {
+    vs = dir + "vsReflect.glsl";
+    fs = dir + "fsReflect.glsl";
+  } else {
+    vs = dir + "vsPhong.glsl";
+    fs = dir + "fsPhong.glsl";
+  }
+
+  shader = buildShader(vs, fs);
 }
 
 void Mesh::initUniform() {
@@ -173,6 +186,11 @@ void Mesh::initUniform() {
   uniLightPosition = myGetUniformLocation(shader, "lightPosition");
   uniTexBase = myGetUniformLocation(shader, "texBase");
   uniTexNormal = myGetUniformLocation(shader, "texNormal");
+
+  if (isReflect) {
+    uniClipPlane0 = myGetUniformLocation(shader, "clipPlane0");
+    uniClipPlane1 = myGetUniformLocation(shader, "clipPlane1");
+  }
 }
 
 void Mesh::loadObj(const string fileName) {

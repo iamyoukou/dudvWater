@@ -1,13 +1,12 @@
 #include "common.h"
 #include "skybox.h"
 #include "water.h"
-#include "pool.h"
 
 GLFWwindow *window;
 Skybox *skybox;
 Water *water;
-Pool *pool;
-Pool *mesh;
+Mesh *terrain;
+Mesh *box;
 
 bool saveTrigger = false;
 int frameNumber = 0;
@@ -50,8 +49,8 @@ int main(int argc, char **argv) {
 
   skybox = new Skybox();
   water = new Water();
-  pool = new Pool("./mesh/terrain.obj");
-  mesh = new Pool("./mesh/cube.obj");
+  terrain = new Mesh("./mesh/terrain.obj", true);
+  box = new Mesh("./mesh/cube.obj", true);
 
   initTexture();
   initMatrix();
@@ -82,24 +81,24 @@ int main(int argc, char **argv) {
     glDisable(GL_CLIP_DISTANCE1);
 
     vec4 clipPlane0 = vec4(0, -1, 0, Water::WATER_Y);
-    glUseProgram(pool->shader);
-    glUniform4fv(pool->uniClipPlane0, 1, value_ptr(clipPlane0));
+    glUseProgram(terrain->shader);
+    glUniform4fv(terrain->uniClipPlane0, 1, value_ptr(clipPlane0));
 
-    glUseProgram(mesh->shader);
-    glUniform4fv(mesh->uniClipPlane0, 1, value_ptr(clipPlane0));
+    glUseProgram(box->shader);
+    glUniform4fv(box->uniClipPlane0, 1, value_ptr(clipPlane0));
 
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
 
-    mat4 poolM = translate(mat4(1.f), vec3(0.f, 1.5f, 0.f));
-    poolM = scale(poolM, vec3(3.f, 3.f, 3.f));
-    pool->draw(poolM, view, projection, eyePoint, lightColor, lightPosition, 13,
-               14);
+    mat4 terrainM = translate(mat4(1.f), vec3(0.f, 1.5f, 0.f));
+    terrainM = scale(terrainM, vec3(3.f, 3.f, 3.f));
+    terrain->draw(terrainM, view, projection, eyePoint, lightColor,
+                  lightPosition, 13, 14);
 
-    mat4 meshM = translate(mat4(1.f), vec3(-2.f, 2.1f, -2.f));
-    meshM = scale(meshM, vec3(0.25f, 0.25f, 0.25f));
-    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 15,
-               16);
+    mat4 boxM = translate(mat4(1.f), vec3(-2.f, 2.1f, -2.f));
+    boxM = scale(boxM, vec3(0.25f, 0.25f, 0.25f));
+    box->draw(boxM, view, projection, eyePoint, lightColor, lightPosition, 15,
+              16);
 
     /* render to reflection texture */
     glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
@@ -116,18 +115,18 @@ int main(int argc, char **argv) {
     // so we must change the view matrix for the scene
     // note: plane (0, 1, 0, D) means plane y = -D, not y = D
     vec4 clipPlane1 = vec4(0.f, 1.f, 0.f, -(Water::WATER_Y) + 0.125f);
-    glUseProgram(pool->shader);
-    glUniform4fv(pool->uniClipPlane1, 1, value_ptr(clipPlane1));
+    glUseProgram(terrain->shader);
+    glUniform4fv(terrain->uniClipPlane1, 1, value_ptr(clipPlane1));
 
-    glUseProgram(mesh->shader);
-    glUniform4fv(mesh->uniClipPlane1, 1, value_ptr(clipPlane1));
+    glUseProgram(box->shader);
+    glUniform4fv(box->uniClipPlane1, 1, value_ptr(clipPlane1));
 
     // draw scene
     skybox->draw(model, reflectV, projection, eyePointReflect);
-    pool->draw(poolM, reflectV, projection, eyePoint, lightColor, lightPosition,
-               13, 14);
-    mesh->draw(meshM, reflectV, projection, eyePoint, lightColor, lightPosition,
-               15, 16);
+    terrain->draw(terrainM, reflectV, projection, eyePoint, lightColor,
+                  lightPosition, 13, 14);
+    box->draw(boxM, reflectV, projection, eyePoint, lightColor, lightPosition,
+              15, 16);
 
     /* render to main screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -138,11 +137,11 @@ int main(int argc, char **argv) {
     // change back to the original view matrix
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
-    pool->draw(poolM, view, projection, eyePoint, lightColor, lightPosition, 13,
-               14);
+    terrain->draw(terrainM, view, projection, eyePoint, lightColor,
+                  lightPosition, 13, 14);
     water->draw(model, view, projection, eyePoint, lightColor, lightPosition);
-    mesh->draw(meshM, view, projection, eyePoint, lightColor, lightPosition, 15,
-               16);
+    box->draw(boxM, view, projection, eyePoint, lightColor, lightPosition, 15,
+              16);
 
     // refresh frame
     glfwSwapBuffers(window);
@@ -173,7 +172,7 @@ int main(int argc, char **argv) {
   glfwTerminate();
 
   delete water;
-  delete pool;
+  delete terrain;
   delete skybox;
 
   // FreeImage library
@@ -354,13 +353,13 @@ void initMatrix() {
 }
 
 void initTexture() {
-  pool->setTexture(pool->tboBase, 13, "./image/ground_dirt_007_basecolor.jpg",
-                   FIF_JPEG);
-  pool->setTexture(pool->tboNormal, 14, "./image/ground_dirt_007_normal.jpg",
-                   FIF_JPEG);
+  terrain->setTexture(terrain->tboBase, 13,
+                      "./image/ground_dirt_007_basecolor.jpg", FIF_JPEG);
+  terrain->setTexture(terrain->tboNormal, 14,
+                      "./image/ground_dirt_007_normal.jpg", FIF_JPEG);
 
-  mesh->setTexture(mesh->tboBase, 15, "./image/wood_plancks_004_basecolor.jpg",
-                   FIF_JPEG);
-  mesh->setTexture(mesh->tboNormal, 16, "./image/wood_plancks_004_normal.jpg",
-                   FIF_JPEG);
+  box->setTexture(box->tboBase, 15, "./image/wood_plancks_004_basecolor.jpg",
+                  FIF_JPEG);
+  box->setTexture(box->tboNormal, 16, "./image/wood_plancks_004_normal.jpg",
+                  FIF_JPEG);
 }
