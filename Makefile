@@ -17,7 +17,7 @@ SRC_DIR=/Users/YJ-work/cpp/myGL_glfw/dudvWater/src
 
 all: main
 
-main: main.o common.o skybox.o water.o
+main: main.o common.o skybox.o water.o terrain.o
 	$(CXX) $(LIBS) $^ -o $@
 
 main.o: $(SRC_DIR)/main.cpp
@@ -30,6 +30,9 @@ skybox.o: $(SRC_DIR)/skybox.cpp
 	$(CXX) -c $(INCS) $^ -o $@
 
 water.o: $(SRC_DIR)/water.cpp
+	$(CXX) -c $(INCS) $^ -o $@
+
+terrain.o: $(SRC_DIR)/terrain.cpp
 	$(CXX) -c $(INCS) $^ -o $@
 
 

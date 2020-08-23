@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
     // the eye point and direction are symmetric to xz-plane
     // so we must change the view matrix for the scene
     // note: plane (0, 1, 0, D) means plane y = -D, not y = D
-    vec4 clipPlane1 = vec4(0.f, 1.f, 0.f, -(Water::WATER_Y) + 0.125f);
+    vec4 clipPlane1 = vec4(0.f, 1.f, 0.f, -Water::WATER_Y + 0.125f);
     glUseProgram(terrain->shader);
     glUniform4fv(terrain->uniClipPlane1, 1, value_ptr(clipPlane1));
 
@@ -123,8 +123,17 @@ int main(int argc, char **argv) {
 
     // draw scene
     skybox->draw(model, reflectV, projection, eyePointReflect);
+
+    // When looking from underwater to sky,
+    // the back faces of the terrain may be seen.
+    // By default, back faces are culled by OpenGL.
+    // This results in artifacts.
+    // Therefore, only disable culling face when drawing terrain.
+    glDisable(GL_CULL_FACE);
     terrain->draw(terrainM, reflectV, projection, eyePoint, lightColor,
                   lightPosition, 13, 14);
+    glEnable(GL_CULL_FACE);
+
     box->draw(boxM, reflectV, projection, eyePoint, lightColor, lightPosition,
               15, 16);
 
