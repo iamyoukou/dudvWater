@@ -15,12 +15,18 @@ LIBS=-L/usr/local/Cellar/glew/2.1.0_1/lib -lglfw \
 
 SRC_DIR=/Users/YJ-work/cpp/myGL_glfw/dudvWater/src
 
-all: main
+all: main normal2dudv
 
 main: main.o common.o skybox.o water.o terrain.o
 	$(CXX) $(LIBS) $^ -o $@
 
 main.o: $(SRC_DIR)/main.cpp
+	$(CXX) -c $(INCS) $^ -o $@
+
+normal2dudv: normal2dudv.o common.o
+	$(CXX) $(LIBS) $^ -o $@
+
+normal2dudv.o: $(SRC_DIR)/normal2dudv.cpp
 	$(CXX) -c $(INCS) $^ -o $@
 
 common.o: $(SRC_DIR)/common.cpp

@@ -17,7 +17,7 @@ As a result, the original texture is distorted to a certain pattern.
 
 ## Questions about generating dudv map
 
-Many articles point out that the dudv map is the first order derivative of a normal map.
+Many articles point out that the dudv map is the first order derivative of a normal map [1, 2].
 But unfortunately, none of them have explained why.
 
 The only thing that I can understand is as following:
@@ -107,3 +107,9 @@ For example, using a height map and an LOD tessellation shader for rendering ter
 The result of using the first derivative of normal is good, though.
 
 ![output](output.gif)
+
+# Reference
+
+[1] Truelsen, Rene. "Real-time shallow water simulation and environment mapping and clouds." (2007).
+
+[2] polycount wiki: [dudv map](http://wiki.polycount.com/wiki/DuDv_map)
