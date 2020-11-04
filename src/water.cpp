@@ -84,11 +84,13 @@ void Water::initUniform() {
   uniTexSkybox = myGetUniformLocation(shader, "texSkybox");
   uniTexDudv = myGetUniformLocation(shader, "texDudv");
   uniTexNormal = myGetUniformLocation(shader, "texNormal");
+  uniTexDepthRefr = myGetUniformLocation(shader, "texDepthRefr");
 
   glUniform1i(uniTexDudv, 10);
   glUniform1i(uniTexNormal, 11);
   glUniform1i(uniTexReflect, 3);
   glUniform1i(uniTexRefract, 2);
+  glUniform1i(uniTexDepthRefr, 25);
 
   // light
   uniLightColor = myGetUniformLocation(shader, "lightColor");
@@ -149,12 +151,25 @@ void Water::initRefract() {
 
   // The depth buffer
   // User-defined framebuffer must have a depth buffer to enable depth test
-  glGenRenderbuffers(1, &rboDepthRefract);
-  glBindRenderbuffer(GL_RENDERBUFFER, rboDepthRefract);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH * 2,
-                        WINDOW_HEIGHT * 2);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, rboDepthRefract);
+  // glGenRenderbuffers(1, &rboDepthRefract);
+  // glBindRenderbuffer(GL_RENDERBUFFER, rboDepthRefract);
+  // glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WINDOW_WIDTH *
+  // 2,
+  //                       WINDOW_HEIGHT * 2);
+  // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+  //                           GL_RENDERBUFFER, rboDepthRefract);
+  glActiveTexture(GL_TEXTURE0 + 25);
+  glGenTextures(1, &tboDepthRefr);
+  glBindTexture(GL_TEXTURE_2D, tboDepthRefr);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH * 2,
+               WINDOW_HEIGHT * 2, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tboDepthRefr, 0);
 
   glDrawBuffer(GL_COLOR_ATTACHMENT1);
 }

@@ -6,7 +6,7 @@ in vec3 worldPos;
 in vec3 worldN;
 
 uniform sampler2D texReflect, texRefract;
-uniform sampler2D texDudv, texNormal;
+uniform sampler2D texDudv, texNormal, texDepthRefr;
 uniform samplerCube texSkybox;
 uniform float dudvMove;
 uniform vec3 lightColor, lightPos;
@@ -14,11 +14,26 @@ uniform vec3 eyePoint;
 
 out vec4 fragColor;
 
-const float alpha = 0.1;
+const float alpha = 0.2;
 const float shineDamper = 300.0;
 
 float fresnelSchlick(float cosTheta, float F0) {
   return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+// https://learnopengl.com/Advanced-OpenGL/Depth-testing
+// e.g. can be used to visualize depth value
+float linearizeDepth(float d) {
+  float near = 0.1;
+  float far = 200.0;
+
+  d = d * 2.0 - 1.0;
+  d = (2.0 * near * far) / (far + near - d * (far - near));
+  d /= far;
+
+  d = min(d, 1.0);
+
+  return d;
 }
 
 void main() {
@@ -55,14 +70,16 @@ void main() {
   vec3 R = normalize(reflect(L, N));
 
   // water color
-  vec4 water = vec4(0, 0.2, 0.3, 0);
+  vec4 deep = vec4(0.003, 0.109, 0.172, 0);
+  vec4 sub = vec4(0.054, 0.345, 0.392, 0);
 
   // reflection and refraction
   vec4 refl = texture(texReflect, uvRefl);
 
   // better to use a depth value?
-  float depth = 0.5;
-  vec4 refr = mix(texture(texRefract, uvRefr), water, depth);
+  float dFactor = linearizeDepth(texture(texDepthRefr, ndc.xy).r);
+  vec4 water = mix(sub, deep, dFactor);
+  vec4 refr = mix(texture(texRefract, uvRefr), water, 0.5);
 
   // air color
   // vec4 air = texture(texSkybox, R);

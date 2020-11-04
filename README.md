@@ -9,7 +9,7 @@ I implement this method based on the video of [ThinMatrix](https://www.youtube.c
 
 # Dudv map
 
-A [dudv map](http://wiki.polycount.com/wiki/DuDv_map) is a texture used to distort another texture.
+A dudv map [2] is a texture used to distort another texture.
 `du` and `dv` are offsets applied to some texture coordinate `(u, v)`,
 i.e. using `(u + du, v + dv)` to sample a texture instead of `(u, v)`.
 `(du, dv)` pairs are recorded in a texture (or a lookup table).
@@ -102,9 +102,12 @@ and rendering such scenes `three` times per frame is too expensive.
 An effective way to improve performance is using level of detail (LOD) technique.
 For example, using a height map and an LOD tessellation shader for rendering terrain.
 
-# Result
+# Shading
 
-The result of using the first derivative of normal is good, though.
+Blend a deep water color and a sub-surface water color [4] based on the depth value from the view point.
+The combination of the shading code is based on [1, 3].
+
+# Result
 
 ![output](output.gif)
 
@@ -113,3 +116,7 @@ The result of using the first derivative of normal is good, though.
 [1] Truelsen, Rene. "Real-time shallow water simulation and environment mapping and clouds." (2007).
 
 [2] polycount wiki: [dudv map](http://wiki.polycount.com/wiki/DuDv_map)
+
+[3] Li, Bo, et al. "A practical method for real-time ocean simulation." 2009 4th International Conference on Computer Science & Education. IEEE, 2009.
+
+[4] Ang, Nigel, et al. "The technical art of sea of thieves." ACM SIGGRAPH 2018 Talks. 2018. 1-2.
