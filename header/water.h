@@ -25,8 +25,8 @@ public:
   GLuint vao;
   GLint uniM, uniV, uniP;
   GLint uniLightColor, uniLightPos;
-  GLint uniTexReflect, uniTexRefract, uniTexDudv, uniTexNormal;
-  GLint uniDudvMove, uniCamCoord;
+  GLint uniTexReflect, uniTexRefract, uniTexDudv, uniTexNormal, uniTexSkybox;
+  GLint uniDudvMove, uniEyePoint;
   GLuint shader;
   GLuint tboRefract, tboReflect;
   GLuint fboRefract, fboReflect;

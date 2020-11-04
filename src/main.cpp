@@ -8,6 +8,7 @@ Skybox *skybox;
 Water *water;
 Terrain *terrain;
 Mesh *box;
+Mesh *name;
 
 bool saveTrigger = false;
 int frameNumber = 0;
@@ -52,6 +53,7 @@ int main(int argc, char **argv) {
   water = new Water();
   terrain = new Terrain("./mesh/gridQuad.obj");
   box = new Mesh("./mesh/cube.obj", true);
+  name = new Mesh("./mesh/name.obj", true);
 
   initTexture();
   initMatrix();
@@ -85,13 +87,16 @@ int main(int argc, char **argv) {
     glUseProgram(terrain->shader);
     glUniform4fv(terrain->uniClipPlane0, 1, value_ptr(clipPlane0));
 
-    glUseProgram(box->shader);
-    glUniform4fv(box->uniClipPlane0, 1, value_ptr(clipPlane0));
+    // glUseProgram(box->shader);
+    // glUniform4fv(box->uniClipPlane0, 1, value_ptr(clipPlane0));
+
+    glUseProgram(name->shader);
+    glUniform4fv(name->uniClipPlane0, 1, value_ptr(clipPlane0));
 
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
 
-    mat4 terrainM = translate(mat4(1.f), vec3(12.f, 1.5f, 12.f));
+    mat4 terrainM = translate(mat4(1.f), vec3(15.f, 1.5f, 12.f));
     terrainM = scale(terrainM, vec3(8.f, 8.f, 8.f));
     terrain->draw(terrainM, view, projection, eyePoint, lightColor,
                   lightPosition, 12, 13, 14);
@@ -101,6 +106,13 @@ int main(int argc, char **argv) {
     // box->draw(boxM, view, projection, eyePoint, lightColor, lightPosition,
     // 15,
     //           16);
+
+    mat4 nameM = translate(mat4(1.f), vec3(5.f, 2.5f, 10.f));
+    // nameM = scale(nameM, vec3(2.f, 2.f, 2.f));
+    nameM = rotate(nameM, 3.14f / 2.f, vec3(1.f, 0.f, 0.f));
+    nameM = rotate(nameM, 3.14f / 2.f, vec3(0.f, 0.f, 1.f));
+    name->draw(nameM, view, projection, eyePoint, lightColor, lightPosition, 15,
+               16);
 
     /* render to reflection texture */
     glBindFramebuffer(GL_FRAMEBUFFER, water->fboReflect);
@@ -120,8 +132,11 @@ int main(int argc, char **argv) {
     glUseProgram(terrain->shader);
     glUniform4fv(terrain->uniClipPlane1, 1, value_ptr(clipPlane1));
 
-    glUseProgram(box->shader);
-    glUniform4fv(box->uniClipPlane1, 1, value_ptr(clipPlane1));
+    // glUseProgram(box->shader);
+    // glUniform4fv(box->uniClipPlane1, 1, value_ptr(clipPlane1));
+
+    glUseProgram(name->shader);
+    glUniform4fv(name->uniClipPlane1, 1, value_ptr(clipPlane1));
 
     // draw scene
     skybox->draw(model, reflectV, projection, eyePointReflect);
@@ -134,6 +149,8 @@ int main(int argc, char **argv) {
     glDisable(GL_CULL_FACE);
     terrain->draw(terrainM, reflectV, projection, eyePoint, lightColor,
                   lightPosition, 12, 13, 14);
+    name->draw(nameM, reflectV, projection, eyePoint, lightColor, lightPosition,
+               15, 16);
     glEnable(GL_CULL_FACE);
 
     // box->draw(boxM, reflectV, projection, eyePoint, lightColor,
@@ -149,8 +166,12 @@ int main(int argc, char **argv) {
     // change back to the original view matrix
     // draw scene
     skybox->draw(model, view, projection, eyePoint);
+
     terrain->draw(terrainM, view, projection, eyePoint, lightColor,
                   lightPosition, 12, 13, 14);
+
+    name->draw(nameM, view, projection, eyePoint, lightColor, lightPosition, 15,
+               16);
 
     // tiling
     Water::dudvMove += 0.0005f; // speed
@@ -383,10 +404,13 @@ void initTexture() {
                       "./image/ground_dirt_007_basecolor.jpg", FIF_JPEG);
   terrain->setTexture(terrain->tboNormal, 13,
                       "./image/ground_dirt_007_normal.jpg", FIF_JPEG);
-  terrain->setTexture(terrain->tboNormal, 14, "./image/height.png", FIF_PNG);
+  terrain->setTexture(terrain->tboHeight, 14, "./image/height.png", FIF_PNG);
 
-  box->setTexture(box->tboBase, 15, "./image/wood_plancks_004_basecolor.jpg",
-                  FIF_JPEG);
-  box->setTexture(box->tboNormal, 16, "./image/wood_plancks_004_normal.jpg",
-                  FIF_JPEG);
+  // box->setTexture(box->tboBase, 15, "./image/wood_plancks_004_basecolor.jpg",
+  //                 FIF_JPEG);
+  // box->setTexture(box->tboNormal, 16, "./image/wood_plancks_004_normal.jpg",
+  //                 FIF_JPEG);
+
+  name->setTexture(name->tboBase, 15, "./image/stone.png", FIF_PNG);
+  name->setTexture(name->tboNormal, 16, "./image/stone.png", FIF_PNG);
 }

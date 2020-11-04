@@ -1,91 +1,80 @@
 #version 330
 
 in vec4 clipSpace;
-in vec2 dudvCoord;
-in vec3 toCamera;
-in vec3 fromLightVector;
+in vec2 uv;
 in vec3 worldPos;
 in vec3 worldN;
 
-uniform sampler2D texReflect;
-uniform sampler2D texRefract;
-uniform sampler2D texDudv;
-uniform sampler2D texNormal;
-uniform sampler2D tex_depth;
+uniform sampler2D texReflect, texRefract;
+uniform sampler2D texDudv, texNormal;
+uniform samplerCube texSkybox;
 uniform float dudvMove;
-uniform vec3 lightColor;
+uniform vec3 lightColor, lightPos;
+uniform vec3 eyePoint;
 
-out vec4 outputColor;
+out vec4 fragColor;
 
-const float alpha = 0.02;
-const float shineDamper = 30.0;
-const float reflectivity = 3.0;
+const float alpha = 0.1;
+const float shineDamper = 300.0;
 
-// compute fragment normal from a normal map
-// i.e. transform it from tangent space to world space
-// the code is from https://github.com/JoeyDeVries/LearnOpenGL
-// check the theory at https://learnopengl.com/Advanced-Lighting/Normal-Mapping
-vec3 getNormalFromMap(vec2 distor) {
-  vec3 tangentNormal = texture(texNormal, distor).xyz * 2.0 - 1.0;
-
-  vec3 Q1 = dFdx(worldPos);
-  vec3 Q2 = dFdy(worldPos);
-  vec2 st1 = dFdx(dudvCoord);
-  vec2 st2 = dFdy(dudvCoord);
-
-  vec3 n = normalize(worldN);
-  vec3 t = normalize(Q1 * st2.t - Q2 * st1.t);
-  vec3 b = -normalize(cross(n, t));
-  mat3 tbn = mat3(t, b, n);
-
-  return normalize(tbn * tangentNormal);
+float fresnelSchlick(float cosTheta, float F0) {
+  return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 void main() {
+  /* start distorting uv */
   vec2 ndc = vec2(clipSpace.x / clipSpace.w, clipSpace.y / clipSpace.w);
   ndc = ndc / 2.0 + 0.5;
 
-  vec2 texCoordRefract = vec2(ndc.x, ndc.y);
-  vec2 texCoordReflect = vec2(ndc.x, -ndc.y);
+  vec2 uvRefr = vec2(ndc.x, ndc.y);
+  vec2 uvRefl = vec2(ndc.x, -ndc.y);
 
-  // Without alpha, distortion will be too huge
-  vec2 distortion1 =
-      texture(texDudv, vec2(dudvCoord.x + dudvMove, dudvCoord.y)).rg * 2.0 -
-      1.0;
-  distortion1 *= alpha;
-  vec2 distortion2 =
-      texture(texDudv, vec2(-dudvCoord.x, dudvCoord.y + dudvMove)).rg * 2.0 -
-      1.0;
-  distortion2 *= alpha;
-  vec2 distortion = distortion1 + distortion2;
+  // Without alpha, distort will be too huge
+  vec2 distort1 = texture(texDudv, vec2(uv.x, uv.y - dudvMove)).rg * 2.0 - 1.0;
+  distort1 *= alpha;
+  vec2 distort2 = texture(texDudv, vec2(-uv.x, uv.y - dudvMove)).rg * 2.0 - 1.0;
+  distort2 *= alpha;
+  vec2 distort = distort1 + distort2;
 
-  texCoordReflect += distortion;
-  texCoordReflect.x = clamp(texCoordReflect.x, 0.001, 0.999);
-  texCoordReflect.y = clamp(texCoordReflect.y, -0.999, -0.001);
+  uvRefl += distort;
+  uvRefl.x = clamp(uvRefl.x, 0.001, 0.999);
+  uvRefl.y = clamp(uvRefl.y, -0.999, -0.001);
 
-  texCoordRefract += distortion;
-  texCoordRefract = clamp(texCoordRefract, 0.001, 0.999);
+  uvRefr += distort;
+  uvRefr = clamp(uvRefr, 0.001, 0.999);
+  /* end distorting uv */
 
-  vec4 colorReflection = texture(texReflect, texCoordReflect);
-  vec4 colorRefraction = texture(texRefract, texCoordRefract);
+  vec3 V = normalize(eyePoint - worldPos);
+  float dist = length(eyePoint - worldPos);
 
-  vec3 normal = getNormalFromMap(distortion);
+  vec3 up = vec3(0, 1, 0);
+  vec3 N = texture(texNormal, distort).rgb * 2.0 - 1.0;
+  // vec3 L = normalize(lightPos - worldPos);
+  vec3 L = normalize(vec3(2, 1, 0));
+  vec3 H = normalize(L + V);
+  vec3 R = normalize(reflect(L, N));
 
-  vec3 viewVector = normalize(toCamera);
-  float refractiveFactor = max(dot(viewVector, vec3(0, 1, 0)), 0.0);
-  refractiveFactor = pow(refractiveFactor, 3.0);
+  // water color
+  vec4 water = vec4(0, 0.2, 0.3, 0);
 
-  // vec3 reflectedLight = reflect(fromLightVector, normal);
+  // reflection and refraction
+  vec4 refl = texture(texReflect, uvRefl);
 
-  vec3 halfway = normalize(-fromLightVector + viewVector);
-  // float specular = max(dot(reflectedLight, viewVector), 0.0);
-  float specular = max(dot(halfway, normal), 0.f);
-  specular = pow(specular, shineDamper);
-  vec3 specularHighlight = lightColor * specular * reflectivity;
+  // better to use a depth value?
+  float depth = 0.5;
+  vec4 refr = mix(texture(texRefract, uvRefr), water, depth);
 
-  outputColor = mix(colorReflection, colorRefraction, refractiveFactor);
-  outputColor = mix(outputColor,
-                    vec4(0.0, 0.0, 0.1, 1.0) + vec4(specularHighlight, 0), 0.1);
+  // air color
+  // vec4 air = texture(texSkybox, R);
+  vec4 air = vec4(0.1, 0.1, 0.1, 0);
 
-  // outputColor = colorReflection;
+  // reflectivity
+  float fresnel = fresnelSchlick(max(dot(V, up), 0.0), 0.02);
+
+  float specFactor = max(dot(H, N), 0.f);
+  specFactor = pow(specFactor, shineDamper);
+  vec4 specular = vec4(lightColor, 0) * specFactor;
+
+  fragColor = mix(refr, refl, fresnel);
+  // fragColor += specular;
 }

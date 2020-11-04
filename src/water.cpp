@@ -21,7 +21,7 @@ void Water::draw(mat4 M, mat4 V, mat4 P, vec3 eyePoint, vec3 lightColor,
   glUseProgram(shader);
 
   glUniform1f(uniDudvMove, dudvMove);
-  glUniform3fv(uniCamCoord, 1, value_ptr(eyePoint));
+  glUniform3fv(uniEyePoint, 1, value_ptr(eyePoint));
 
   glUniform3fv(uniLightColor, 1, value_ptr(lightColor));
   glUniform3fv(uniLightPos, 1, value_ptr(lightPosition));
@@ -60,10 +60,10 @@ void Water::initShader() {
 
 void Water::initTexture() {
   // water dudv map
-  setTexture(tboDudv, 11, "./image/dudv2.png", FIF_PNG);
+  setTexture(tboDudv, 10, "./image/fftDudv.png", FIF_PNG);
 
   // water normal map
-  setTexture(tboNormal, 12, "./image/normalMap2.png", FIF_PNG);
+  setTexture(tboNormal, 11, "./image/fftNormal.png", FIF_PNG);
 }
 
 void Water::initUniform() {
@@ -81,11 +81,12 @@ void Water::initUniform() {
   // texture
   uniTexReflect = myGetUniformLocation(shader, "texReflect");
   uniTexRefract = myGetUniformLocation(shader, "texRefract");
+  uniTexSkybox = myGetUniformLocation(shader, "texSkybox");
   uniTexDudv = myGetUniformLocation(shader, "texDudv");
   uniTexNormal = myGetUniformLocation(shader, "texNormal");
 
-  glUniform1i(uniTexDudv, 11);
-  glUniform1i(uniTexNormal, 12);
+  glUniform1i(uniTexDudv, 10);
+  glUniform1i(uniTexNormal, 11);
   glUniform1i(uniTexReflect, 3);
   glUniform1i(uniTexRefract, 2);
 
@@ -98,7 +99,7 @@ void Water::initUniform() {
 
   // other
   uniDudvMove = myGetUniformLocation(shader, "dudvMove");
-  uniCamCoord = myGetUniformLocation(shader, "camCoord");
+  uniEyePoint = myGetUniformLocation(shader, "eyePoint");
 }
 
 void Water::initReflect() {
