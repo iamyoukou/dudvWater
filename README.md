@@ -5,7 +5,9 @@ Their change in the height can be ignored even we change our view point.
 This method is suitable for simulating those ripples,
 and it is used widely in video games (e.g. _Dark Souls_).
 
-I implement this method based on the video of [ThinMatrix](https://www.youtube.com/watch?v=HusvGeEDU_U&list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh) and the paper of [Rene Truelsen](http://image.diku.dk/projects/media/rene.truelsen.07.pdf).
+I implement this method based on the video of [ThinMatrix](https://www.youtube.com/watch?v=HusvGeEDU_U&list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh) and [1].
+
+![output](output.gif)
 
 # Dudv map
 
@@ -106,10 +108,6 @@ For example, using a height map and an LOD tessellation shader for rendering ter
 
 Blend a deep water color and a sub-surface water color [4] based on the depth value from the view point.
 The combination of the shading code is based on [1, 3].
-
-# Result
-
-![output](output.gif)
 
 # Reference
 
