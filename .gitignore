@@ -1,4 +1,5 @@
-
+.clang-format
+.DS_Store
 result/
 main
 *.o

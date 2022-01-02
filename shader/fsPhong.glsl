@@ -11,35 +11,34 @@ uniform vec3 eyePoint;
 
 out vec4 outputColor;
 
-// compute fragment normal from a normal map
-// i.e. transform it from tangent space to world space
-// the code is from https://github.com/JoeyDeVries/LearnOpenGL
-// check the theory at https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+// Compute fragment normal from a normal map
+// (transform it from tangent space to world space)
+// The code is from https://github.com/JoeyDeVries/LearnOpenGL
+// Check the theory at https://learnopengl.com/Advanced-Lighting/Normal-Mapping
 vec3 getNormalFromMap()
 {
     vec3 tangentNormal = texture(texNormal, uv).xyz * 2.0 - 1.0;
 
-    vec3 Q1  = dFdx(worldPos);
-    vec3 Q2  = dFdy(worldPos);
+    vec3 Q1 = dFdx(worldPos);
+    vec3 Q2 = dFdy(worldPos);
     vec2 st1 = dFdx(uv);
     vec2 st2 = dFdy(uv);
 
-    vec3 n   = normalize(worldN);
-    vec3 t  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 n = normalize(worldN);
+    vec3 t = normalize(Q1 * st2.t - Q2 * st1.t);
 
-    // in the tutorial, they use vec3 b = -normalize(cross(n, t))
+    // In the tutorial, they use vec3 b = -normalize(cross(n, t))
     // but it generates weird result
     // vec3 b  = normalize(cross(n, t));
-
-    vec3 b = normalize(-Q1*st2.s + Q2*st1.s);
+    vec3 b = normalize(-Q1 * st2.s + Q2 * st1.s);
 
     mat3 tbn = mat3(t, b, n);
 
     return normalize(tbn * tangentNormal);
 }
 
-
-void main(){
+void main()
+{
     vec4 texColor = texture(texBase, uv) * 0.75;
 
     vec3 N = getNormalFromMap();

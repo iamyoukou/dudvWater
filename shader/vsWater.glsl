@@ -10,12 +10,11 @@ out vec2 uv;
 out vec3 worldPos;
 out vec3 worldN;
 
-void main() {
-  // projection water plane
-  gl_Position = P * V * M * vec4(vtxCoord, 1.0);
-  clipSpace = gl_Position;
-
-  uv = vtxUv;
-  worldPos = (M * vec4(vtxCoord, 1.0)).xyz;
-  worldN = normalize((vec4(vtxN, 1.0) * inverse(M)).xyz);
+void main()
+{
+    gl_Position = P * V * M * vec4(vtxCoord, 1.0);
+    clipSpace = gl_Position;
+    uv = vtxUv;
+    worldPos = (M * vec4(vtxCoord, 1.0)).xyz;
+    worldN = normalize((vec4(vtxN, 1.0) * inverse(M)).xyz);
 }
